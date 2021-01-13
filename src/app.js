@@ -10,7 +10,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls';
 
-import { getCenterPoint } from './utils';
+// import { getCenterPoint } from './utils';
 
 const mixers = [];
 
@@ -27,14 +27,14 @@ const spaceTexture = [
   'MilkyWay/dark-s_pz.jpg',
   'MilkyWay/dark-s_nz.jpg',
 ];
-const mapTexture = [
-  'map/px.png',
-  'map/nx.png',
-  'map/py.png',
-  'map/ny.png',
-  'map/pz.png',
-  'map/nz.png',
-];
+// const mapTexture = [
+//   'map/px.png',
+//   'map/nx.png',
+//   'map/py.png',
+//   'map/ny.png',
+//   'map/pz.png',
+//   'map/nz.png',
+// ];
 
 const background = new THREE.CubeTextureLoader()
   .setPath('assets/textures/cube/')
@@ -141,7 +141,7 @@ function animate() {
 }
 
 function render() {
-  const time = performance.now() * 0.0002;
+  // const time = performance.now() * 0.0002;
   const delta = clock.getDelta();
 
   if (controls) {
@@ -153,7 +153,7 @@ function render() {
   });
 
   // const mirror = scene.getObjectByName('mirror');
-  const mirror2 = scene.getObjectByName('mirror2');
+  // const mirror2 = scene.getObjectByName('mirror2');
 
   // mirror.rotation.z = -Math.sin(time) / 3;
   // mirror2.rotation.y = -Math.cos(time) / 2;
@@ -421,3 +421,9 @@ function displayAxisHelper() {
   const axesHelper = new THREE.AxesHelper(20);
   scene.add(axesHelper);
 }
+
+window.debug = function (state) {
+  displayAxisHelper();
+
+  debug = state;
+};
