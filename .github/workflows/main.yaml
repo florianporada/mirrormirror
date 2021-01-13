@@ -1,0 +1,82 @@
+name: Project Build And Deploy Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_container:
+    runs-on: ubuntu-latest
+    name: Build and Push
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get release version
+        id: get_version
+        run: echo "RELEASE_VERSION=$(echo ${GITHUB_SHA::8})" >> $GITHUB_ENV
+      - name: Set conditional env vars
+        id: set_conditional_env_vars
+        shell: bash
+        run: |
+          echo "DOCKER_IMAGE=$(echo "florianporada/mirrormirror.florianporada.com")" >> $GITHUB_ENV
+          echo "DOCKER_SERVICE=$(echo "mirrormirror.florianporada.com")" >> $GITHUB_ENV
+      - name: Prepare persisted_data file
+        shell: bash
+        run: |
+          echo ${{ env.DOCKER_SERVICE }} > docker_service.txt
+          echo ${{ env.DOCKER_IMAGE }} > docker_image.txt
+          echo ${{ env.RELEASE_VERSION }} > release_version.txt
+      - name: Upload persisted_data
+        uses: actions/upload-artifact@v2
+        with:
+          name: persisted_data
+          path: |
+            docker_service.txt
+            docker_image.txt
+            release_version.txt
+      - name: Build and publish to registry
+        uses: elgohr/Publish-Docker-Github-Action@master
+        env:
+          APP_VERSION: ${{ env.RELEASE_VERSION }}
+          RELEASE_DATE: $(date +\"%Y/%m/%d\")
+        with:
+          name: ${{ env.DOCKER_IMAGE }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          buildargs: APP_VERSION,RELEASE_DATE
+          tags: 'latest,${{ env.RELEASE_VERSION }}'
+  update_droplet:
+    needs: [build_container]
+    runs-on: ubuntu-latest
+    name: Update DigitalOcean droplet
+    steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Download persisted_data
+        uses: actions/download-artifact@v2
+        with:
+          name: persisted_data
+      - name: Download persisted_data
+        shell: bash
+        run: |
+          echo "DOCKER_SERVICE=$(cat docker_service.txt)" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE=$(cat docker_image.txt)" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=$(cat release_version.txt)" >> $GITHUB_ENV
+      - name: Create ssh key
+        env:
+          GH_DO_SSH_KEY: ${{ secrets.GH_DO_SSH_KEY }}
+        shell: bash
+        run: |
+          mkdir ~/.ssh
+          echo "$GH_DO_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.DO_DROP_HOST }} >> ~/.ssh/known_hosts
+      - name: Update DigitalOcean drop via doctl
+        shell: bash
+        run: |
+          doctl compute ssh drop001 \
+            --ssh-command "/www/docker/server_infrastructure/update.sh -n ${{ env.DOCKER_SERVICE }} -i ${{ env.DOCKER_IMAGE }}:${{ env.RELEASE_VERSION }}" \
+            --ssh-key-path ~/.ssh/id_rsa
