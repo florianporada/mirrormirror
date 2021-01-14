@@ -17,16 +17,21 @@
     "@babel/preset-env": "^7.4.3",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.0.5",
+    "css-loader": "^5.0.1",
     "eslint": "^7.15.0",
     "eslint-config-prettier": "^7.0.0",
     "eslint-plugin-babel": "^5.3.1",
     "eslint-plugin-prettier": "^3.3.0",
+    "node-sass": "^5.0.0",
     "prettier": "^2.2.1",
+    "sass-loader": "^10.1.0",
+    "style-loader": "^2.0.0",
     "webpack": "^4.16.1",
     "webpack-cli": "^3.0.8",
     "webpack-dev-server": "^3.1.10"
   },
   "dependencies": {
+    "normalize.css": "^8.0.1",
     "three": "^0.123.0"
   }
 }

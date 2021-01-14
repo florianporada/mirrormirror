@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import './style.scss';
+
 import {
   Lensflare,
   LensflareElement,
@@ -262,6 +264,7 @@ function addBody({ url, name, position, isAnimated }) {
       }
 
       scene.add(gltf.scene);
+      onWindowResize();
     },
     // called while loading is progressing
     function (xhr) {
