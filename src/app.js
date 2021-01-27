@@ -41,44 +41,55 @@ const avatars = [
     image: '/assets/models/generated_05/boi_bg.png',
     description: 'Still noot a pirrrrate',
   },
+  {
+    object: '/assets/models/generated_06/result_collage_01_256.obj',
+    image: '/assets/models/generated_06/collage_01.png',
+    description: 'Something combined 01',
+  },
+  {
+    object: '/assets/models/generated_07/result_collage_02_256.obj',
+    image: '/assets/models/generated_07/collage_02.png',
+    description: 'Something combined 02',
+  },
+];
+const skyboxes = [
+  [
+    'MilkyWay/dark-s_px.jpg',
+    'MilkyWay/dark-s_nx.jpg',
+    'MilkyWay/dark-s_py.jpg',
+    'MilkyWay/dark-s_ny.jpg',
+    'MilkyWay/dark-s_pz.jpg',
+    'MilkyWay/dark-s_nz.jpg',
+  ],
+  [
+    'tree/px.png',
+    'tree/nx.png',
+    'tree/py.png',
+    'tree/ny.png',
+    'tree/pz.png',
+    'tree/nz.png',
+  ],
+  [
+    'map/px.png',
+    'map/nx.png',
+    'map/py.png',
+    'map/ny.png',
+    'map/pz.png',
+    'map/nz.png',
+  ],
 ];
 
 let camera, scene, renderer, clock, controls;
 let debug = false;
 let avatarIndex = 0;
+let skyboxIndex = 0;
 
 const gltfLoader = new GLTFLoader();
 const objLoader = new OBJLoader();
 const textureLoader = new THREE.TextureLoader();
-
-// const spaceTexture = [
-//   'MilkyWay/dark-s_px.jpg',
-//   'MilkyWay/dark-s_nx.jpg',
-//   'MilkyWay/dark-s_py.jpg',
-//   'MilkyWay/dark-s_ny.jpg',
-//   'MilkyWay/dark-s_pz.jpg',
-//   'MilkyWay/dark-s_nz.jpg',
-// ];
-// const mapTexture = [
-//   'map/px.png',
-//   'map/nx.png',
-//   'map/py.png',
-//   'map/ny.png',
-//   'map/pz.png',
-//   'map/nz.png',
-// ];
-const treeTexture = [
-  'tree/px.png',
-  'tree/nx.png',
-  'tree/py.png',
-  'tree/ny.png',
-  'tree/pz.png',
-  'tree/nz.png',
-];
-
 const background = new THREE.CubeTextureLoader()
   .setPath('assets/textures/cube/')
-  .load(treeTexture);
+  .load(skyboxes[skyboxIndex]);
 
 init();
 animate();
@@ -95,7 +106,7 @@ function init() {
   // Camera
   addCamera({
     name: 'camera1',
-    position: { x: 15, y: 20, z: 0 },
+    position: { x: 1, y: 2.2, z: 1 },
     debug: debug,
   });
 
@@ -481,6 +492,20 @@ function loadNextAvatar() {
   });
 }
 
+function switchSkyBox() {
+  if (skyboxIndex >= skyboxes.length - 1) {
+    skyboxIndex = 0;
+  } else {
+    skyboxIndex = skyboxIndex + 1;
+  }
+
+  const background = new THREE.CubeTextureLoader()
+    .setPath('assets/textures/cube/')
+    .load(skyboxes[skyboxIndex]);
+
+  scene.background = background;
+}
+
 function activateKeyboardControls() {
   document.addEventListener('keydown', onDocumentKeyDown, false);
 
@@ -502,6 +527,11 @@ function activateKeyboardControls() {
       console.log('Next model');
 
       loadNextAvatar();
+    } else if (keyCode === 66) {
+      // 'n'
+      console.log('Next background');
+
+      switchSkyBox();
     }
   }
 }
