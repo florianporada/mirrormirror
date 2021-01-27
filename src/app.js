@@ -506,23 +506,29 @@ function switchSkyBox() {
   scene.background = background;
 }
 
-function activateVideoSphere() {
-  const video = document.createElement('video');
+function toggleVideoSphere() {
+  if (scene.getObjectByName('videosphere')) {
+    scene.remove(scene.getObjectByName('videosphere'));
+  } else {
+    const video = document.createElement('video');
 
-  video.src = 'assets/textures/video/background_video.mp4';
-  video.load();
-  video.play();
+    video.src = 'assets/textures/video/background_video.mp4';
+    video.load();
+    video.play();
 
-  const videoTexture = new THREE.VideoTexture(video);
-  const geometry = new THREE.SphereGeometry(25, 32, 32);
-  const videoMaterial = new THREE.MeshBasicMaterial({
-    map: videoTexture,
-    side: THREE.DoubleSide,
-    toneMapped: false,
-  });
+    const videoTexture = new THREE.VideoTexture(video);
+    const geometry = new THREE.SphereGeometry(25, 32, 32);
+    const videoMaterial = new THREE.MeshBasicMaterial({
+      map: videoTexture,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
 
-  const sphere = new THREE.Mesh(geometry, videoMaterial);
-  scene.add(sphere);
+    const sphere = new THREE.Mesh(geometry, videoMaterial);
+
+    sphere.name = 'videosphere';
+    scene.add(sphere);
+  }
 }
 
 function activateKeyboardControls() {
@@ -555,7 +561,7 @@ function activateKeyboardControls() {
       // 'v'
       console.log('Video room');
 
-      activateVideoSphere();
+      toggleVideoSphere();
     }
   }
 }
