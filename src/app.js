@@ -12,7 +12,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-// import { getCenterPoint } from './utils';
+import { addButton } from './utils';
 
 const mixers = [];
 const avatars = [
@@ -177,6 +177,8 @@ function init() {
   document.body.appendChild(VRButton.createButton(renderer));
 
   activateKeyboardControls();
+  activateFlightMode();
+  addControlButtons();
   //
   window.addEventListener('resize', onWindowResize, false);
 }
@@ -424,7 +426,7 @@ function addAmbientSound() {
     sound.setVolume(0.1);
   });
 
-  const btn = document.createElement('BUTTON');
+  const btn = document.createElement('button');
   btn.innerHTML = 'sound on';
   btn.classList.add('control');
   btn.onclick = function () {
@@ -566,6 +568,14 @@ function activateKeyboardControls() {
   }
 }
 
+function addControlButtons() {
+  addButton('ego view (O)', activateEgoView);
+  addButton('flight mode (P)', activateFlightMode);
+  addButton('next body (N)', loadNextAvatar);
+  addButton('next room (B)', switchSkyBox);
+  addButton('video room (V)', toggleVideoSphere);
+}
+
 function displayAxisHelper() {
   // axis helper
   const axesHelper = new THREE.AxesHelper(20);
@@ -577,5 +587,3 @@ window.debug = function (state) {
 
   debug = state;
 };
-
-activateFlightMode();

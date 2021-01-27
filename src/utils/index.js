@@ -13,3 +13,14 @@ export function getCenterPoint(mesh) {
   mesh.localToWorld(middle);
   return middle;
 }
+
+export function addButton(name, func) {
+  const btn = document.createElement('button');
+  btn.innerHTML = name;
+  btn.classList.add('control');
+  btn.onclick = function () {
+    func();
+  };
+
+  document.getElementById('Controlinfo').appendChild(btn);
+}
