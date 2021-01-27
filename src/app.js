@@ -506,6 +506,25 @@ function switchSkyBox() {
   scene.background = background;
 }
 
+function activateVideoSphere() {
+  const video = document.createElement('video');
+
+  video.src = 'assets/textures/video/background_video.mp4';
+  video.load();
+  video.play();
+
+  const videoTexture = new THREE.VideoTexture(video);
+  const geometry = new THREE.SphereGeometry(25, 32, 32);
+  const videoMaterial = new THREE.MeshBasicMaterial({
+    map: videoTexture,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  });
+
+  const sphere = new THREE.Mesh(geometry, videoMaterial);
+  scene.add(sphere);
+}
+
 function activateKeyboardControls() {
   document.addEventListener('keydown', onDocumentKeyDown, false);
 
@@ -528,10 +547,15 @@ function activateKeyboardControls() {
 
       loadNextAvatar();
     } else if (keyCode === 66) {
-      // 'n'
-      console.log('Next background');
+      // 'b'
+      console.log('Next room');
 
       switchSkyBox();
+    } else if (keyCode === 86) {
+      // 'v'
+      console.log('Video room');
+
+      activateVideoSphere();
     }
   }
 }
@@ -547,3 +571,5 @@ window.debug = function (state) {
 
   debug = state;
 };
+
+activateFlightMode();
