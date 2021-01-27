@@ -9,26 +9,56 @@ import {
 import { Reflector } from 'three/examples/jsm/objects/Reflector';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls';
 
 // import { getCenterPoint } from './utils';
 
 const mixers = [];
+const avatars = [
+  {
+    object: '/assets/models/generated_01/result_swim_256.obj',
+    image: '/assets/models/generated_01/swim.png',
+    description: 'Some guy in a swimsuit',
+  },
+  {
+    object: '/assets/models/generated_02/result_pirate_256.obj',
+    image: '/assets/models/generated_02/pirate.png',
+    description: 'A pirrrrate',
+  },
+  {
+    object: '/assets/models/generated_03/result_test_256.obj',
+    image: '/assets/models/generated_03/test.png',
+    description: 'The coffee dude',
+  },
+  {
+    object: '/assets/models/generated_04/result_boi_256.obj',
+    image: '/assets/models/generated_04/boi.png',
+    description: 'Not a pirrrrate',
+  },
+  {
+    object: '/assets/models/generated_05/result_boi_bg_256.obj',
+    image: '/assets/models/generated_05/boi_bg.png',
+    description: 'Still noot a pirrrrate',
+  },
+];
 
 let camera, scene, renderer, clock, controls;
 let debug = false;
+let avatarIndex = 0;
 
 const gltfLoader = new GLTFLoader();
+const objLoader = new OBJLoader();
 const textureLoader = new THREE.TextureLoader();
-const spaceTexture = [
-  'MilkyWay/dark-s_px.jpg',
-  'MilkyWay/dark-s_nx.jpg',
-  'MilkyWay/dark-s_py.jpg',
-  'MilkyWay/dark-s_ny.jpg',
-  'MilkyWay/dark-s_pz.jpg',
-  'MilkyWay/dark-s_nz.jpg',
-];
+
+// const spaceTexture = [
+//   'MilkyWay/dark-s_px.jpg',
+//   'MilkyWay/dark-s_nx.jpg',
+//   'MilkyWay/dark-s_py.jpg',
+//   'MilkyWay/dark-s_ny.jpg',
+//   'MilkyWay/dark-s_pz.jpg',
+//   'MilkyWay/dark-s_nz.jpg',
+// ];
 // const mapTexture = [
 //   'map/px.png',
 //   'map/nx.png',
@@ -37,10 +67,18 @@ const spaceTexture = [
 //   'map/pz.png',
 //   'map/nz.png',
 // ];
+const treeTexture = [
+  'tree/px.png',
+  'tree/nx.png',
+  'tree/py.png',
+  'tree/ny.png',
+  'tree/pz.png',
+  'tree/nz.png',
+];
 
 const background = new THREE.CubeTextureLoader()
   .setPath('assets/textures/cube/')
-  .load(spaceTexture);
+  .load(treeTexture);
 
 init();
 animate();
@@ -57,18 +95,19 @@ function init() {
   // Camera
   addCamera({
     name: 'camera1',
-    position: { x: 0, y: 20, z: 0 },
+    position: { x: 15, y: 20, z: 0 },
     debug: debug,
   });
 
   // Sound
   addAmbientSound();
 
-  // Body
+  // Avatar
   addBody({
-    url: '/assets/models/Spotted-Jelly/Spotted-Jelly.gltf',
-    name: 'jelly',
+    url: avatars[avatarIndex].object,
+    name: 'avatar',
     isAnimated: true,
+    type: 'obj',
     position: {
       y: 0.75,
       z: 0,
@@ -99,11 +138,11 @@ function init() {
   // Lensflare
   addLensflare();
 
-  // Mirrors
+  // Mirrors;
   addMirror({
     name: 'mirror',
     position: { x: 0.25, y: 0.5, z: -5 },
-    // rotation: { y: -Math.PI / 6 },
+    // rotation: { y: -Matpwh.PI / 6 },
   });
   addMirror({
     name: 'mirror2',
@@ -235,38 +274,57 @@ function addStage({ name, position } = {}) {
 //   scene.add(torus);
 // }
 
-function addBody({ url, name, position, isAnimated }) {
+function addBody({ url, name, position, isAnimated, type = 'obj' }) {
   // defaults
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
   const scale = { x: 0.5, y: 0.5, z: 0.5 };
+  const loadingDomElement = document.getElementById('Loading');
 
-  gltfLoader.load(
+  let loader = objLoader;
+
+  if (type === 'gltf') {
+    loader = gltfLoader;
+  }
+
+  loadingDomElement.classList.add('show');
+  loader.load(
     // resource URL
     url,
-    // called when the resource is loaded
-    function (gltf) {
-      gltf.scene.name = name;
+    // called when resource is loaded
+    function (object) {
+      if (type === 'gltf') {
+        object.scene.name = name;
 
-      gltf.scene.position.set(pos.x, pos.y, pos.z);
-      gltf.scene.scale.set(scale.x, scale.y, scale.z);
+        object.scene.position.set(pos.x, pos.y, pos.z);
+        object.scene.scale.set(scale.x, scale.y, scale.z);
 
-      gltf.scene.castShadow = true;
-      gltf.scene.receiveShadow = true;
+        object.scene.castShadow = true;
+        object.scene.receiveShadow = true;
 
-      if (isAnimated) {
-        const mixer = new THREE.AnimationMixer(gltf.scene);
+        if (isAnimated) {
+          const mixer = new THREE.AnimationMixer(object.scene);
 
-        mixers.push(mixer);
+          mixers.push(mixer);
 
-        gltf.animations.forEach((clip) => {
-          mixer.clipAction(clip).play();
-        });
+          object.animations.forEach((clip) => {
+            mixer.clipAction(clip).play();
+          });
+        }
+
+        scene.add(object.scene);
       }
 
-      scene.add(gltf.scene);
+      if (type === 'obj') {
+        object.name = name;
+
+        scene.add(object);
+      }
+
+      loadingDomElement.classList.remove('show');
+
       onWindowResize();
     },
-    // called while loading is progressing
+    // called when loading is in progresses
     function (xhr) {
       console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
     },
@@ -355,7 +413,7 @@ function addAmbientSound() {
     sound.setVolume(0.1);
   });
 
-  var btn = document.createElement('BUTTON');
+  const btn = document.createElement('BUTTON');
   btn.innerHTML = 'sound on';
   btn.classList.add('control');
   btn.onclick = function () {
@@ -368,7 +426,7 @@ function addAmbientSound() {
     }
   };
 
-  document.body.appendChild(btn);
+  document.getElementById('Controlinfo').appendChild(btn);
 }
 
 function activateEgoView() {
@@ -385,18 +443,42 @@ function activateEgoView() {
   controls.update();
 }
 
-function activateFirstPersonControls() {
-  controls = new FirstPersonControls(camera, renderer.domElement);
+function activateFlightMode() {
+  controls = new OrbitControls(camera, renderer.domElement);
 
-  controls.lookSpeed = 0.4;
-  controls.movementSpeed = 20;
-  controls.noFly = true;
-  controls.lookVertical = true;
-  controls.constrainVertical = true;
-  controls.verticalMin = 1.0;
-  controls.verticalMax = 2.0;
-  controls.lon = -150;
-  controls.lat = 120;
+  camera.position.set(0, 20, 0);
+  camera.lookAt(0, 0, 0);
+
+  controls.update();
+}
+
+function loadNextAvatar() {
+  while (scene.getObjectByName('avatar')) {
+    const avatar = scene.getObjectByName('avatar');
+
+    scene.remove(avatar);
+  }
+
+  if (avatarIndex >= avatars.length - 1) {
+    avatarIndex = 0;
+  } else {
+    avatarIndex = avatarIndex + 1;
+  }
+
+  console.log(
+    `Load avatar ${avatarIndex}: ${avatars[avatarIndex].description}`,
+  );
+
+  addBody({
+    url: avatars[avatarIndex].object,
+    name: 'avatar',
+    isAnimated: true,
+    type: 'obj',
+    position: {
+      y: 0.75,
+      z: 0,
+    },
+  });
 }
 
 function activateKeyboardControls() {
@@ -405,16 +487,21 @@ function activateKeyboardControls() {
   function onDocumentKeyDown(event) {
     const keyCode = event.which;
 
-    if (keyCode == 79) {
+    if (keyCode === 79) {
       // 'o'
-      console.log('orbit controls');
+      console.log('Ego view');
 
       activateEgoView();
-    } else if (keyCode == 80) {
+    } else if (keyCode === 80) {
       // 'p'
-      console.log('first person controls');
+      console.log('Flight mode');
 
-      activateFirstPersonControls();
+      activateFlightMode();
+    } else if (keyCode === 78) {
+      // 'n'
+      console.log('Next model');
+
+      loadNextAvatar();
     }
   }
 }
