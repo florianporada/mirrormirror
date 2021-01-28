@@ -113,6 +113,18 @@ function init() {
   // Sound
   addAmbientSound();
 
+  // Lights
+  addLight({
+    name: 'light1',
+    position: { x: -1, y: 1.5, z: -1.5 },
+    color: 0x8800ff, // #8800ff
+  });
+  addLight({
+    name: 'light2',
+    position: { x: 1, y: 1.5, z: -2.5 },
+    color: 0xff0000, // #ff0000
+  });
+
   // Avatar
   addBody({
     url: avatars[avatarIndex].object,
@@ -132,44 +144,6 @@ function init() {
       y: -1.1,
       z: -0,
     },
-  });
-
-  // Lights
-  addLight({
-    name: 'light1',
-    position: { x: -1, y: 1.5, z: -1.5 },
-    color: 0x8800ff, // #8800ff
-  });
-  addLight({
-    name: 'light2',
-    position: { x: 1, y: 1.5, z: -2.5 },
-    color: 0xff0000, // #ff0000
-  });
-
-  addMovingLight({
-    name: 'moving-light',
-    position: { x: -8, y: 0, z: -1 },
-    color: 0xffbb72, // #ffbb72
-  });
-
-  // Lensflare
-  addLensflare();
-
-  // Mirrors;
-  addMirror({
-    name: 'mirror',
-    position: { x: 0.25, y: 0.5, z: -5 },
-    // rotation: { y: -Matpwh.PI / 6 },
-  });
-  addMirror({
-    name: 'mirror2',
-    position: { x: -3, y: 2, z: -3 },
-    rotation: { y: 0.6, x: 0.8 },
-  });
-  addMirror({
-    name: 'mirror3',
-    position: { x: 3, y: 1, z: -2 },
-    rotation: { y: -0.7, x: 0.8 },
   });
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -228,6 +202,34 @@ function render() {
   }
 
   renderer.render(scene, camera);
+}
+
+function initRoom() {
+  addMovingLight({
+    name: 'moving-light',
+    position: { x: -8, y: 0, z: -1 },
+    color: 0xffbb72, // #ffbb72
+  });
+
+  // Lensflare
+  addLensflare();
+
+  // Mirrors;
+  addMirror({
+    name: 'mirror',
+    position: { x: 0.25, y: 0.5, z: -5 },
+    // rotation: { y: -Matpwh.PI / 6 },
+  });
+  addMirror({
+    name: 'mirror2',
+    position: { x: -3, y: 2, z: -3 },
+    rotation: { y: 0.6, x: 0.8 },
+  });
+  addMirror({
+    name: 'mirror3',
+    position: { x: 3, y: 1, z: -2 },
+    rotation: { y: -0.7, x: 0.8 },
+  });
 }
 
 // Objects & Assets
