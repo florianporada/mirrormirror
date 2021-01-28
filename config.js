@@ -2,8 +2,8 @@ module.exports = {
   FaviconsWebpackPlugin: {
     logo: './src/images/favicon.svg',
     favicons: {
-      appName: 'another-webpack-boilerplate',
-      appDescription: 'Another webpack boilerplate for fast project bootstrapping',
+      appName: 'MirrorMirror',
+      appDescription: 'VR inner body experience',
       developerName: 'florianporada',
       developerURL: null, // prevent retrieving from the nearest package.json
       background: '#eeeeee',
