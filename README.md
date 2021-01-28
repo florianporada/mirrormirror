@@ -1,8 +1,11 @@
 # [Mirror Mirror](https://mirrormirror.florianporada.com/)
 
+![Build](https://github.com/florianporada/mirrormirror/workflows/Build%20And%20Deploy/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A VR experience to get more in touch with your digital avatar.
 
-## Usage
+## Development
 
 ### Installation
 
@@ -28,15 +31,28 @@ Compile and build
 yarn run build
 ```
 
-## More Info
+## Deployment
 
-### Author
+The standard behavior of the action is to create a docker image and push it to the docker registry.
 
-Florian Porada
-[Web](http://florianporada.com)
+- GitHub Actions Environment Secrets
+
+  ```txt
+  DOCKER_USERNAME
+  DOCKER_PASSWORD
+  ```
+
+- Skip CI:
+
+  If the commit message contains `skip ci` the GitHub Action will not be triggered.
+
+## Authors
 
 Laurin Stecher
 []
+
+Florian Porada
+[Web](http://florianporada.com)
 
 ### License
 

@@ -1,11 +1,6 @@
 import * as THREE from 'three';
 
-import './style.scss';
-
-import {
-  Lensflare,
-  LensflareElement,
-} from 'three/examples/jsm/objects/Lensflare';
+import { Lensflare, LensflareElement } from 'three/examples/jsm/objects/Lensflare';
 import { Reflector } from 'three/examples/jsm/objects/Reflector';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -61,26 +56,16 @@ const skyboxes = [
     'MilkyWay/dark-s_pz.jpg',
     'MilkyWay/dark-s_nz.jpg',
   ],
-  [
-    'tree/px.png',
-    'tree/nx.png',
-    'tree/py.png',
-    'tree/ny.png',
-    'tree/pz.png',
-    'tree/nz.png',
-  ],
-  [
-    'map/px.png',
-    'map/nx.png',
-    'map/py.png',
-    'map/ny.png',
-    'map/pz.png',
-    'map/nz.png',
-  ],
+  ['tree/px.png', 'tree/nx.png', 'tree/py.png', 'tree/ny.png', 'tree/pz.png', 'tree/nz.png'],
+  ['map/px.png', 'map/nx.png', 'map/py.png', 'map/ny.png', 'map/pz.png', 'map/nz.png'],
 ];
 
-let camera, scene, renderer, clock, controls;
-let debug = false;
+let globalDebug = false;
+let camera;
+let scene;
+let renderer;
+let clock;
+let controls;
 let avatarIndex = 0;
 let skyboxIndex = 0;
 
@@ -88,90 +73,14 @@ const gltfLoader = new GLTFLoader();
 const objLoader = new OBJLoader();
 const textureLoader = new THREE.TextureLoader();
 const background = new THREE.CubeTextureLoader()
-  .setPath('assets/textures/cube/')
+  .setPath('/assets/textures/cube/')
   .load(skyboxes[skyboxIndex]);
-
-init();
-animate();
-
-function init() {
-  clock = new THREE.Clock();
-  scene = new THREE.Scene();
-  scene.background = background;
-  scene.fog = new THREE.Fog(0x424874, 100, 200);
-
-  // Debug View
-  // debug();
-
-  // Camera
-  addCamera({
-    name: 'camera1',
-    position: { x: 1, y: 2.2, z: 1 },
-    debug: debug,
-  });
-
-  // Sound
-  addAmbientSound();
-
-  // Lights
-  addLight({
-    name: 'light1',
-    position: { x: -1, y: 1.5, z: -1.5 },
-    color: 0x8800ff, // #8800ff
-  });
-  addLight({
-    name: 'light2',
-    position: { x: 1, y: 1.5, z: -2.5 },
-    color: 0xff0000, // #ff0000
-  });
-
-  // Avatar
-  addBody({
-    url: avatars[avatarIndex].object,
-    name: 'avatar',
-    isAnimated: true,
-    type: 'obj',
-    position: {
-      y: 0.75,
-      z: 0,
-    },
-  });
-
-  // Stage
-  addStage({
-    name: 'stage1',
-    position: {
-      y: -1.1,
-      z: -0,
-    },
-  });
-
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.autoClear = false;
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth - 15, window.innerHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.xr.enabled = true;
-
-  document.body.appendChild(renderer.domElement);
-  document.body.appendChild(VRButton.createButton(renderer));
-
-  activateKeyboardControls();
-  activateFlightMode();
-  addControlButtons();
-  //
-  window.addEventListener('resize', onWindowResize, false);
-}
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 
   renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-function animate() {
-  renderer.setAnimationLoop(render);
 }
 
 function render() {
@@ -204,32 +113,8 @@ function render() {
   renderer.render(scene, camera);
 }
 
-function initRoom() {
-  addMovingLight({
-    name: 'moving-light',
-    position: { x: -8, y: 0, z: -1 },
-    color: 0xffbb72, // #ffbb72
-  });
-
-  // Lensflare
-  addLensflare();
-
-  // Mirrors;
-  addMirror({
-    name: 'mirror',
-    position: { x: 0.25, y: 0.5, z: -5 },
-    // rotation: { y: -Matpwh.PI / 6 },
-  });
-  addMirror({
-    name: 'mirror2',
-    position: { x: -3, y: 2, z: -3 },
-    rotation: { y: 0.6, x: 0.8 },
-  });
-  addMirror({
-    name: 'mirror3',
-    position: { x: 3, y: 1, z: -2 },
-    rotation: { y: -0.7, x: 0.8 },
-  });
+function animate() {
+  renderer.setAnimationLoop(render);
 }
 
 // Objects & Assets
@@ -243,13 +128,10 @@ function addMirror({ name, rotation, position, size }) {
   // pivots
   const pivotPoint = new THREE.Object3D();
 
-  const reflector = new Reflector(
-    new THREE.PlaneBufferGeometry(mirrorSize.x, mirrorSize.y),
-    {
-      textureWidth: window.innerWidth * window.devicePixelRatio,
-      textureHeight: window.innerHeight * window.devicePixelRatio,
-    },
-  );
+  const reflector = new Reflector(new THREE.PlaneBufferGeometry(mirrorSize.x, mirrorSize.y), {
+    textureWidth: window.innerWidth * window.devicePixelRatio,
+    textureHeight: window.innerHeight * window.devicePixelRatio,
+  });
 
   reflector.name = name;
   parent.name = `${name}-parent`;
@@ -257,11 +139,7 @@ function addMirror({ name, rotation, position, size }) {
   reflector.position.set(pos.x, pos.y, pos.z);
   reflector.rotation.set(rot.x, rot.y, rot.z);
 
-  const frameGeometry = new THREE.BoxBufferGeometry(
-    mirrorSize.x + 0.2,
-    mirrorSize.y + 0.2,
-    0.1,
-  );
+  const frameGeometry = new THREE.BoxBufferGeometry(mirrorSize.x + 0.2, mirrorSize.y + 0.2, 0.1);
   const frameMaterial = new THREE.MeshPhongMaterial({
     color: 0x2194ce,
     emissive: 0x3d0a0a,
@@ -336,33 +214,35 @@ function addBody({ url, name, position, isAnimated, type = 'obj' }) {
     // resource URL
     url,
     // called when resource is loaded
-    function (object) {
-      if (type === 'gltf') {
-        object.scene.name = name;
+    (object) => {
+      const obj = object;
 
-        object.scene.position.set(pos.x, pos.y, pos.z);
+      if (type === 'gltf') {
+        obj.scene.name = name;
+
+        obj.scene.position.set(pos.x, pos.y, pos.z);
         object.scene.scale.set(scale.x, scale.y, scale.z);
 
-        object.scene.castShadow = true;
-        object.scene.receiveShadow = true;
+        obj.scene.castShadow = true;
+        obj.scene.receiveShadow = true;
 
         if (isAnimated) {
-          const mixer = new THREE.AnimationMixer(object.scene);
+          const mixer = new THREE.AnimationMixer(obj.scene);
 
           mixers.push(mixer);
 
-          object.animations.forEach((clip) => {
+          obj.animations.forEach((clip) => {
             mixer.clipAction(clip).play();
           });
         }
 
-        scene.add(object.scene);
+        scene.add(obj.scene);
       }
 
       if (type === 'obj') {
-        object.name = name;
+        obj.name = name;
 
-        scene.add(object);
+        scene.add(obj);
       }
 
       loadingDomElement.classList.remove('show');
@@ -370,13 +250,13 @@ function addBody({ url, name, position, isAnimated, type = 'obj' }) {
       onWindowResize();
     },
     // called when loading is in progresses
-    function (xhr) {
-      console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+    (xhr) => {
+      console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
     },
     // called when loading has errors
-    function (error) {
+    (error) => {
       console.log('An error happened', error);
-    },
+    }
   );
 }
 
@@ -413,7 +293,7 @@ function addMovingLight({ name, position, color, debug = false }) {
 
   // "lightbulb"
   const geometry = new THREE.SphereGeometry(0.05, 32, 32);
-  const material = new THREE.MeshBasicMaterial({ color: color });
+  const material = new THREE.MeshBasicMaterial({ color });
   const sphere = new THREE.Mesh(geometry, material);
 
   light.name = name;
@@ -438,18 +318,10 @@ function addMovingLight({ name, position, color, debug = false }) {
   }
 }
 
-function addCamera({ name, position, debug }) {
+function addCamera({ name, position, debug = false }) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
 
-  console.log(position);
-  console.log(pos);
-
-  camera = new THREE.PerspectiveCamera(
-    50,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000,
-  );
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
 
   camera.name = name;
   camera.position.set(pos.x, pos.y, pos.z);
@@ -463,12 +335,8 @@ function addCamera({ name, position, debug }) {
 
 function addLensflare() {
   const lensflare = new Lensflare();
-  const texture0 = textureLoader.load(
-    'assets/textures/lensflare/lensflare0.png',
-  );
-  const texture3 = textureLoader.load(
-    'assets/textures/lensflare/lensflare3.png',
-  );
+  const texture0 = textureLoader.load('assets/textures/lensflare/lensflare0.png');
+  const texture3 = textureLoader.load('assets/textures/lensflare/lensflare3.png');
 
   lensflare.position.set(0, 5, -5);
   lensflare.addElement(new LensflareElement(texture0, 700, 0));
@@ -488,7 +356,7 @@ function addAmbientSound() {
 
   // load a sound and set it as the Audio object's buffer
   const audioLoader = new THREE.AudioLoader();
-  audioLoader.load('assets/sounds/ambient01.mp3', function (buffer) {
+  audioLoader.load('assets/sounds/ambient01.mp3', (buffer) => {
     sound.setBuffer(buffer);
     sound.setLoop(true);
     sound.setVolume(0.1);
@@ -497,7 +365,7 @@ function addAmbientSound() {
   const btn = document.createElement('button');
   btn.innerHTML = 'sound on';
   btn.classList.add('control');
-  btn.onclick = function () {
+  btn.onclick = function click() {
     if (sound.isPlaying) {
       btn.innerHTML = 'sound on';
       sound.pause();
@@ -543,12 +411,10 @@ function loadNextAvatar() {
   if (avatarIndex >= avatars.length - 1) {
     avatarIndex = 0;
   } else {
-    avatarIndex = avatarIndex + 1;
+    avatarIndex += 1;
   }
 
-  console.log(
-    `Load avatar ${avatarIndex}: ${avatars[avatarIndex].description}`,
-  );
+  console.log(`Load avatar ${avatarIndex}: ${avatars[avatarIndex].description}`);
 
   addBody({
     url: avatars[avatarIndex].object,
@@ -566,14 +432,14 @@ function switchSkyBox() {
   if (skyboxIndex >= skyboxes.length - 1) {
     skyboxIndex = 0;
   } else {
-    skyboxIndex = skyboxIndex + 1;
+    skyboxIndex += 1;
   }
 
-  const background = new THREE.CubeTextureLoader()
+  const bg = new THREE.CubeTextureLoader()
     .setPath('assets/textures/cube/')
     .load(skyboxes[skyboxIndex]);
 
-  scene.background = background;
+  scene.background = bg;
 }
 
 function toggleVideoSphere() {
@@ -602,8 +468,6 @@ function toggleVideoSphere() {
 }
 
 function activateKeyboardControls() {
-  document.addEventListener('keydown', onDocumentKeyDown, false);
-
   function onDocumentKeyDown(event) {
     const keyCode = event.which;
 
@@ -634,6 +498,8 @@ function activateKeyboardControls() {
       toggleVideoSphere();
     }
   }
+
+  document.addEventListener('keydown', onDocumentKeyDown, false);
 }
 
 function addControlButtons() {
@@ -650,8 +516,110 @@ function displayAxisHelper() {
   scene.add(axesHelper);
 }
 
-window.debug = function (state) {
+window.debug = function debug(state) {
   displayAxisHelper();
 
-  debug = state;
+  globalDebug = state;
 };
+
+function initRoom() {
+  addMovingLight({
+    name: 'moving-light',
+    position: { x: -8, y: 0, z: -1 },
+    color: 0xffbb72, // #ffbb72
+  });
+
+  // Lensflare
+  addLensflare();
+
+  // Mirrors;
+  addMirror({
+    name: 'mirror',
+    position: { x: 0.25, y: 0.5, z: -5 },
+    // rotation: { y: -Matpwh.PI / 6 },
+  });
+  addMirror({
+    name: 'mirror2',
+    position: { x: -3, y: 2, z: -3 },
+    rotation: { y: 0.6, x: 0.8 },
+  });
+  addMirror({
+    name: 'mirror3',
+    position: { x: 3, y: 1, z: -2 },
+    rotation: { y: -0.7, x: 0.8 },
+  });
+}
+
+function init() {
+  clock = new THREE.Clock();
+  scene = new THREE.Scene();
+  scene.background = background;
+  scene.fog = new THREE.Fog(0x424874, 100, 200);
+
+  // Debug View
+  // debug();
+
+  // Camera
+  addCamera({
+    name: 'camera1',
+    position: { x: 1, y: 2.2, z: 1 },
+    debug: globalDebug,
+  });
+
+  // Sound
+  addAmbientSound();
+
+  // Lights
+  addLight({
+    name: 'light1',
+    position: { x: -1, y: 1.5, z: -1.5 },
+    color: 0x8800ff, // #8800ff
+  });
+  addLight({
+    name: 'light2',
+    position: { x: 1, y: 1.5, z: -2.5 },
+    color: 0xff0000, // #ff0000
+  });
+
+  // Avatar
+  addBody({
+    url: avatars[avatarIndex].object,
+    name: 'avatar',
+    isAnimated: true,
+    type: 'obj',
+    position: {
+      y: 0.75,
+      z: 0,
+    },
+  });
+
+  // Stage
+  addStage({
+    name: 'stage1',
+    position: {
+      y: -1.1,
+      z: -0,
+    },
+  });
+
+  initRoom();
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.autoClear = false;
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth - 15, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.xr.enabled = true;
+
+  document.body.appendChild(renderer.domElement);
+  document.body.appendChild(VRButton.createButton(renderer));
+
+  activateKeyboardControls();
+  activateFlightMode();
+  addControlButtons();
+  //
+  window.addEventListener('resize', onWindowResize, false);
+}
+
+init();
+animate();

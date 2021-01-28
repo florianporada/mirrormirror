@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 
 export function getCenterPoint(mesh) {
-  var middle = new THREE.Vector3();
-  var geometry = mesh.geometry;
+  const middle = new THREE.Vector3();
+  const { geometry } = mesh;
 
   geometry.computeBoundingBox();
 
@@ -18,7 +18,7 @@ export function addButton(name, func) {
   const btn = document.createElement('button');
   btn.innerHTML = name;
   btn.classList.add('control');
-  btn.onclick = function () {
+  btn.onclick = function click() {
     func();
   };
 

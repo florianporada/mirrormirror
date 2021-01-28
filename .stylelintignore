@@ -1,0 +1,3 @@
+**/*.js
+**/_form.scss
+src/styles/setup/_normalize.scss

@@ -23,9 +23,15 @@ FROM nginx:alpine
 ARG NODE_ENV=production
 ENV NODE_ENV $NODE_ENV
 
+# unknown is the default, but you can override it with --build-arg APP_VERSION=$(echo "1.0.0") during docker build
+ARG APP_VERSION=unknown
+ENV APP_VERSION $APP_VERSION
+
 # unknown is the default, but you can override it with --build-arg RELEASE_DATE=$(date +"%Y/%m/%d") during docker build
+ARG RELEASE_DATE=unknown
+ENV RELEASE_DATE $RELEASE_DATE
+
 LABEL com.florianporada.author="florianporada"
 
-COPY --from=builder /usr/src/app/assets /usr/share/nginx/html/assets
-COPY --from=builder /usr/src/app/build /usr/share/nginx/html/build
-COPY --from=builder /usr/src/app/index.html /usr/share/nginx/html/index.html
+COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
+COPY --from=builder /usr/src/app/nginx.conf /etc/nginx/nginx.conf
