@@ -34,4 +34,4 @@ ENV RELEASE_DATE $RELEASE_DATE
 LABEL com.florianporada.author="florianporada"
 
 COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
-COPY --from=builder /usr/src/app/nginx.conf /etc/nginx/nginx.conf
+# COPY --from=builder /usr/src/app/nginx.conf /etc/nginx/nginx.conf
