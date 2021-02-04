@@ -4,10 +4,7 @@
     <meta charset="UTF-8" />
     <title>Mirror Mirror - Inner Self VR Experience</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="Description"
-      content="Mirror Mirror - Inner Self VR Experience"
-    />
+    <meta name="Description" content="Mirror Mirror - Inner Self VR Experience" />
 
     <!-- Open Graph data / Facebook Card data -->
     <meta property="og:title" content="another webpack boilerplate" />
@@ -17,14 +14,8 @@
       content="https://github.com/florianporada/another-webpack-boilerplate"
     />
     <meta property="og:image" content="https://i.imgur.com/lxRBpeb.jpg" />
-    <meta
-      property="og:image:alt"
-      content="A blue package, symbolizing what webpack does."
-    />
-    <meta
-      property="og:description"
-      content="Mirror Mirror - Inner Self VR Experience"
-    />
+    <meta property="og:image:alt" content="A blue package, symbolizing what webpack does." />
+    <meta property="og:description" content="Mirror Mirror - Inner Self VR Experience" />
 
     <!-- Twitter Card data -->
     <meta name="twitter:card" content="summary" />
@@ -35,10 +26,7 @@
     <!-- Mobile header color Windows Phone -->
     <meta name="msapplication-navbutton-color" content="#2c638f" />
     <!-- Mobile header color for iOS Safari (supports black, black-translucent or default) -->
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   </head>
 
   <body>
@@ -47,6 +35,15 @@
     </div>
     <div id="Controlinfo">
       <span>controls</span>
+    </div>
+    <div id="loading" style="display: flex">
+      <div class="spinner-text">Loading PoseNet model...</div>
+      <div class="sk-spinner sk-spinner-pulse"></div>
+    </div>
+    <!-- <img id='cat' src='https://i.imgur.com/LrC5Xgh.jpeg' crossorigin='anonymous' /> -->
+    <div id="main" style="display: none">
+      <video id="video" playsinline style="display: none"></video>
+      <canvas id="output" />
     </div>
   </body>
 </html>

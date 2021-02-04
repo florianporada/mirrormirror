@@ -7,7 +7,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-import { addButton } from './utils';
+import { addButton, leftWrist, setThreeContext } from './utils';
+
+import './utils/camera';
 
 const mixers = [];
 const avatars = [
@@ -69,6 +71,7 @@ let controls;
 let avatarIndex = 0;
 let skyboxIndex = 0;
 
+const threeContext = { camera };
 const gltfLoader = new GLTFLoader();
 const objLoader = new OBJLoader();
 const textureLoader = new THREE.TextureLoader();
@@ -109,6 +112,11 @@ function render() {
     movienLight.rotation.y += 0.01;
     movienLight.rotation.x = -Math.cos(delta) / 2;
   }
+
+  const avatar = scene.getObjectByName('avatar');
+  if (avatar) avatar.rotation.y = leftWrist.y;
+
+  console.log(leftWrist);
 
   renderer.render(scene, camera);
 }
@@ -603,6 +611,7 @@ function init() {
   });
 
   initRoom();
+  setThreeContext(threeContext);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.autoClear = false;

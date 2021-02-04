@@ -6,7 +6,9 @@
     "vr",
     "webxr",
     "threejs",
-    "3d"
+    "3d",
+    "posenet",
+    "tensorflow"
   ],
   "scripts": {
     "build": "webpack --config webpack.prod.js",
@@ -27,6 +29,7 @@
   "private": true,
   "devDependencies": {
     "@babel/core": "^7.12.10",
+    "@babel/plugin-transform-runtime": "^7.12.13",
     "@babel/preset-env": "^7.12.11",
     "autoprefixer": "^10.2.3",
     "babel-eslint": "^10.1.0",
@@ -85,6 +88,12 @@
     }
   },
   "dependencies": {
+    "@tensorflow-models/posenet": "^2.2.1",
+    "@tensorflow/tfjs": "^3.0.0",
+    "@tensorflow/tfjs-backend-webgl": "^3.0.0",
+    "@tensorflow/tfjs-core": "^3.0.0",
+    "dat.gui": "^0.7.7",
+    "stats.js": "^0.17.0",
     "three": "^0.125.1"
   }
 }
