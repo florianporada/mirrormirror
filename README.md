@@ -57,3 +57,8 @@ Florian Porada
 ### License
 
 This project is licensed under the MIT License
+
+### Credits
+
+- [https://github.com/kschaer/poseToThree/](https://github.com/kschaer/poseToThree/)
+- [https://github.com/mishig25/3d-posenet](https://github.com/mishig25/3d-posenet)
