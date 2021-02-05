@@ -1,16 +1,21 @@
 import * as THREE from 'three';
 import dat from 'dat.gui';
 
-import { Lensflare, LensflareElement } from 'three/examples/jsm/objects/Lensflare';
-import { Reflector } from 'three/examples/jsm/objects/Reflector';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 import { getCenterPoint, setThreeContext } from './utils/three_helper';
-
-import { joints, initBodyTracking } from './utils/camera';
+import { joints, initBodyTracking } from './utils/posenet';
+import {
+  lensflareObject,
+  lightObject,
+  lookAtObject,
+  mirrorObject,
+  movingLightObject,
+  platformObject,
+} from './utils/three_objects';
 
 // Global config
 const gui = new dat.GUI({ width: 300 });
@@ -83,7 +88,6 @@ let controls;
 
 const gltfLoader = new GLTFLoader();
 const objLoader = new OBJLoader();
-const textureLoader = new THREE.TextureLoader();
 const background = new THREE.CubeTextureLoader()
   .setPath('/assets/textures/cube/')
   .load(skyboxes[0]);
@@ -147,67 +151,6 @@ function render() {
 
 function animate() {
   renderer.setAnimationLoop(render);
-}
-
-// Objects & Assets
-function addMirror({ name, rotation, position, size }) {
-  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
-  const mirrorSize = { ...{ x: 2.4, y: 4.4 }, ...size };
-
-  // parent for mirror + pivot etc...
-  const parent = new THREE.Object3D();
-  // pivots
-  const pivotPoint = new THREE.Object3D();
-
-  const reflector = new Reflector(new THREE.PlaneBufferGeometry(mirrorSize.x, mirrorSize.y), {
-    textureWidth: window.innerWidth * window.devicePixelRatio,
-    textureHeight: window.innerHeight * window.devicePixelRatio,
-  });
-
-  reflector.name = name;
-  parent.name = `${name}-parent`;
-
-  reflector.position.set(pos.x, pos.y, pos.z);
-  reflector.rotation.set(rot.x, rot.y, rot.z);
-
-  const frameGeometry = new THREE.BoxBufferGeometry(mirrorSize.x + 0.2, mirrorSize.y + 0.2, 0.1);
-  const frameMaterial = new THREE.MeshPhongMaterial({
-    color: 0x2194ce,
-    emissive: 0x3d0a0a,
-    specular: 0x2b2b2b,
-    shininess: 100,
-  });
-  const frame = new THREE.Mesh(frameGeometry, frameMaterial);
-
-  frame.position.z = -0.07;
-  frame.castShadow = true;
-  frame.receiveShadow = true;
-
-  // defines point around which the object rotates
-  pivotPoint.rotation.z = 0;
-  pivotPoint.rotation.x = 0;
-  pivotPoint.rotation.y = 0;
-
-  reflector.add(frame);
-  pivotPoint.add(reflector);
-  parent.add(pivotPoint);
-
-  scene.add(parent);
-}
-
-function addStage({ name, position } = {}) {
-  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const boxGeometry = new THREE.BoxBufferGeometry(1.5, 0.1, 1.5);
-  const boxMaterial = new THREE.MeshPhongMaterial();
-  const box = new THREE.Mesh(boxGeometry, boxMaterial);
-
-  box.name = name;
-  box.castShadow = true;
-  box.receiveShadow = true;
-  box.position.set(pos.x, pos.y, pos.z);
-
-  scene.add(box);
 }
 
 // function addGeometry() {
@@ -301,63 +244,27 @@ function addBody({ url, name, position, playAnimation }) {
   );
 }
 
-function addLight({ name, position, color, debug = false }) {
-  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
+// function addLight({ name, position, color, debug = false }) {
+//   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
 
-  const light = new THREE.DirectionalLight(color);
+//   const light = new THREE.DirectionalLight(color);
 
-  light.name = name;
+//   light.name = name;
 
-  light.position.set(pos.x, pos.y, pos.z);
-  light.castShadow = true;
-  light.shadow.camera.zoom = 4;
+//   light.position.set(pos.x, pos.y, pos.z);
+//   light.castShadow = true;
+//   light.shadow.camera.zoom = 4;
 
-  scene.add(light);
-  light.target.position.set(0, 0, -2);
+//   scene.add(light);
+//   light.target.position.set(0, 0, -2);
 
-  scene.add(light.target);
+//   scene.add(light.target);
 
-  if (debug) {
-    const helper = new THREE.CameraHelper(light.shadow.camera);
-    scene.add(helper);
-  }
-}
-
-function addMovingLight({ name, position, color, debug = false }) {
-  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-
-  const light = new THREE.PointLight(color, 10, 10);
-  // parent for mirror + pivot etc...
-  const parent = new THREE.Object3D();
-  // pivots
-  const pivotPoint = new THREE.Object3D();
-
-  // "lightbulb"
-  const geometry = new THREE.SphereGeometry(0.05, 32, 32);
-  const material = new THREE.MeshBasicMaterial({ color });
-  const sphere = new THREE.Mesh(geometry, material);
-
-  light.name = name;
-  parent.name = `${name}-parent`;
-  light.position.set(pos.x, pos.y, pos.z);
-  light.castShadow = true;
-
-  // defines point around which the object rotates
-  pivotPoint.rotation.z = 0;
-  pivotPoint.rotation.x = 0;
-  pivotPoint.rotation.y = 0;
-
-  light.add(sphere);
-  pivotPoint.add(light);
-  parent.add(pivotPoint);
-
-  scene.add(parent);
-
-  if (debug) {
-    const helper = new THREE.CameraHelper(light.shadow.camera);
-    scene.add(helper);
-  }
-}
+//   if (debug) {
+//     const helper = new THREE.CameraHelper(light.shadow.camera);
+//     scene.add(helper);
+//   }
+// }
 
 function addCamera({ name, position, debug = false }) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
@@ -372,33 +279,6 @@ function addCamera({ name, position, debug = false }) {
     const helper = new THREE.CameraHelper(camera);
     scene.add(helper);
   }
-}
-
-function addLookAtPoint({ name, position }) {
-  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const geometry = new THREE.SphereGeometry(0.02, 32, 32);
-  const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const sphere = new THREE.Mesh(geometry, material);
-
-  sphere.name = name;
-  sphere.position.set(pos.x, pos.y, pos.z);
-
-  scene.add(sphere);
-}
-
-function addLensflare() {
-  const lensflare = new Lensflare();
-  const texture0 = textureLoader.load('assets/textures/lensflare/lensflare0.png');
-  const texture3 = textureLoader.load('assets/textures/lensflare/lensflare3.png');
-
-  lensflare.position.set(0, 5, -5);
-  lensflare.addElement(new LensflareElement(texture0, 700, 0));
-  lensflare.addElement(new LensflareElement(texture3, 60, 0.6));
-  lensflare.addElement(new LensflareElement(texture3, 70, 0.7));
-  lensflare.addElement(new LensflareElement(texture3, 120, 0.9));
-  lensflare.addElement(new LensflareElement(texture3, 70, 1));
-
-  scene.add(lensflare);
 }
 
 function addAmbientSound() {
@@ -503,31 +383,50 @@ window.debug = function debug(state) {
 };
 
 function initRoom() {
-  addMovingLight({
+  // Moving light source
+  const [movinglight] = movingLightObject({
     name: 'moving-light',
     position: { x: -8, y: 0, z: -1 },
     color: 0xffbb72, // #ffbb72
   });
+  scene.add(movinglight);
 
   // Lensflare
-  addLensflare();
+  scene.add(lensflareObject());
 
   // Mirrors;
-  addMirror({
-    name: 'mirror',
-    position: { x: 0.25, y: 0.5, z: -5 },
-    // rotation: { y: -Matpwh.PI / 6 },
-  });
-  addMirror({
-    name: 'mirror2',
-    position: { x: -3, y: 2, z: -3 },
-    rotation: { y: 0.6, x: 0.8 },
-  });
-  addMirror({
-    name: 'mirror3',
-    position: { x: 3, y: 1, z: -2 },
-    rotation: { y: -0.7, x: 0.8 },
-  });
+  scene.add(
+    mirrorObject({
+      name: 'mirror',
+      position: { x: 0.25, y: 0.5, z: -5 },
+      // rotation: { y: -Matpwh.PI / 6 },
+    })
+  );
+  scene.add(
+    mirrorObject({
+      name: 'mirror2',
+      position: { x: -3, y: 2, z: -3 },
+      rotation: { y: 0.6, x: 0.8 },
+    })
+  );
+  scene.add(
+    mirrorObject({
+      name: 'mirror3',
+      position: { x: 3, y: 1, z: -2 },
+      rotation: { y: -0.7, x: 0.8 },
+    })
+  );
+
+  // Stage
+  scene.add(
+    platformObject({
+      name: 'stage1',
+      position: {
+        y: -1.1,
+        z: -0,
+      },
+    })
+  );
 }
 
 function init() {
@@ -539,26 +438,28 @@ function init() {
   // Debug View
   // debug();
 
+  // Lights
+  const [light1] = lightObject({
+    name: 'light1',
+    position: { x: -1, y: 1.5, z: -1.5 },
+    color: 0x8800ff, // #8800ff
+  });
+  const [light2] = lightObject({
+    name: 'light2',
+    position: { x: 1, y: 1.5, z: -2.5 },
+    color: 0xff0000, // #ff0000
+  });
+
+  scene.add(light1, light2);
+
+  // Sound
+  addAmbientSound();
+
   // Camera
   addCamera({
     name: 'camera1',
     position: { x: 1, y: 2.2, z: 1 },
     debug: globalDebug,
-  });
-
-  // Sound
-  addAmbientSound();
-
-  // Lights
-  addLight({
-    name: 'light1',
-    position: { x: -1, y: 1.5, z: -1.5 },
-    color: 0x8800ff, // #8800ff
-  });
-  addLight({
-    name: 'light2',
-    position: { x: 1, y: 1.5, z: -2.5 },
-    color: 0xff0000, // #ff0000
   });
 
   // Avatar
@@ -573,16 +474,7 @@ function init() {
     },
   });
 
-  // Stage
-  addStage({
-    name: 'stage1',
-    position: {
-      y: -1.1,
-      z: -0,
-    },
-  });
-
-  addLookAtPoint({ name: 'lookAtPoint', position: new THREE.Vector3(1, 1, 1) });
+  scene.add(lookAtObject({ name: 'lookAtPoint', position: new THREE.Vector3(1, 1, 1) }));
 
   initRoom();
 
@@ -637,6 +529,7 @@ function addThreeControls() {
     skyboxes.map((value, index) => index)
   );
 
+  appControl.open();
   appControlAvatarIndex.onChange((value) => {
     loadNextAvatar(value);
   });

@@ -273,7 +273,7 @@ function setupGui(cameras, net) {
   }
 
   updateGui();
-  input.open();
+  // input.open();
   // Pose confidence: the overall confidence in the estimation of a person's
   // pose (i.e. a person detected in a frame)
   // Min part confidence: the confidence that a particular estimated keypoint
@@ -289,14 +289,12 @@ function setupGui(cameras, net) {
   // nms Radius: controls the minimum distance between poses that are returned
   // defaults to 20, which is probably fine for most use cases
   multi.add(guiState.multiPoseDetection, 'nmsRadius').min(0.0).max(40.0);
-  multi.open();
 
   const output = gui.addFolder('Output');
   output.add(guiState.output, 'showVideo');
   output.add(guiState.output, 'showSkeleton');
   output.add(guiState.output, 'showPoints');
   output.add(guiState.output, 'showBoundingBox');
-  output.open();
 
   const trackingControl = gui.addFolder('Tracking Control');
   trackingControl.add(guiState.trackingControl, 'trackBody');
@@ -319,6 +317,7 @@ function setupGui(cameras, net) {
         multi.open();
         break;
       default:
+        // eslint-disable-next-line no-console
         console.log('no valid algorithm validated');
     }
   });
@@ -458,6 +457,7 @@ function detectPoseInRealTime(video, net) {
         minPartConfidence = +guiState.multiPoseDetection.minPartConfidence;
         break;
       default:
+        // eslint-disable-next-line no-console
         console.log('no valid algorithm validated');
     }
 
