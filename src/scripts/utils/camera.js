@@ -19,9 +19,8 @@
  */
 import * as posenet from '@tensorflow-models/posenet';
 import '@tensorflow/tfjs-backend-webgl';
-import dat from 'dat.gui';
+import '@tensorflow/tfjs';
 import Stats from 'stats.js';
-import { rightWristController, leftWristController } from './index';
 
 import {
   drawBoundingBox,
@@ -33,7 +32,14 @@ import {
   tryResNetButtonText,
   updateTryResNetButtonDatGuiCss,
 } from './demo_util';
-import { VIDEO_HEIGHT, VIDEO_WIDTH } from '../posenet';
+import Transform from './transform';
+import Joints from './joints';
+import { getThreeContext } from './three_helper';
+
+export const VIDEO_HEIGHT = 480;
+export const VIDEO_WIDTH = 640;
+export const joints = new Joints();
+export const transform = new Transform(joints);
 
 const stats = new Stats();
 
@@ -96,7 +102,7 @@ const defaultResNetStride = 32;
 const defaultResNetInputResolution = 250;
 
 const guiState = {
-  algorithm: 'multi-pose',
+  algorithm: 'single-pose',
   input: {
     architecture: 'MobileNetV1',
     outputStride: defaultMobileNetStride,
@@ -120,6 +126,9 @@ const guiState = {
     showPoints: true,
     showBoundingBox: false,
   },
+  trackingControl: {
+    trackBody: false,
+  },
   net: null,
 };
 
@@ -133,14 +142,14 @@ function setupGui(cameras, net) {
     guiState.camera = cameras[0].deviceId;
   }
 
-  const gui = new dat.GUI({ width: 300 });
+  const { gui } = getThreeContext();
 
   let architectureController = null;
-  guiState[tryResNetButtonName] = function () {
-    architectureController.setValue('ResNet50');
-  };
-  gui.add(guiState, tryResNetButtonName).name(tryResNetButtonText);
-  updateTryResNetButtonDatGuiCss();
+  // guiState[tryResNetButtonName] = () => {
+  //   architectureController.setValue('ResNet50');
+  // };
+  // gui.add(guiState, tryResNetButtonName).name(tryResNetButtonText);
+  // updateTryResNetButtonDatGuiCss();
 
   // The single-pose algorithm is faster and simpler but requires only one
   // person to be in the frame or results will be innaccurate. Multi-pose works
@@ -288,6 +297,10 @@ function setupGui(cameras, net) {
   output.add(guiState.output, 'showPoints');
   output.add(guiState.output, 'showBoundingBox');
   output.open();
+
+  const trackingControl = gui.addFolder('Tracking Control');
+  trackingControl.add(guiState.trackingControl, 'trackBody');
+  trackingControl.open();
 
   architectureController.onChange((architecture) => {
     // if architecture is ResNet50, then show ResNet50 options
@@ -478,9 +491,23 @@ function detectPoseInRealTime(video, net) {
     // scores
     poses.forEach(({ score, keypoints }) => {
       if (score >= minPoseConfidence) {
-        // ref: https://github.com/kschaer/poseToThree/blob/master/client/camera.js
-        leftWristController(leftWristX, leftWristY);
-        rightWristController(rightWristX, rightWristY);
+        if (guiState.trackingControl.trackBody) {
+          transform.updateKeypoints(keypoints, minPartConfidence);
+          transform.head();
+
+          const rightShoulderAngle = transform.rotateJoint(
+            'leftShoulder',
+            'rightShoulder',
+            'rightElbow'
+          );
+          const rightArmAngle = transform.rotateJoint('rightShoulder', 'rightElbow', 'rightWrist');
+          const leftShoulderAngle = transform.rotateJoint(
+            'rightShoulder',
+            'leftShoulder',
+            'leftElbow'
+          );
+          const lefArmAngle = transform.rotateJoint('leftShoulder', 'leftElbow', 'leftWrist');
+        }
 
         if (guiState.output.showPoints) {
           drawKeypoints(keypoints, minPartConfidence, ctx);
@@ -538,4 +565,6 @@ export default async function bindPage() {
 navigator.getUserMedia =
   navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-bindPage();
+export function initBodyTracking() {
+  bindPage();
+}

@@ -6,10 +6,20 @@ const height = window.innerHeight;
 let threeContext = {};
 
 export function setThreeContext(ctx) {
-  console.log(ctx);
   threeContext = ctx;
 }
 
+export function getThreeContext() {
+  return threeContext;
+}
+
+/**
+ * Returns the center point of a mesh
+ *
+ * @export
+ * @param {THREE.Mesh} mesh
+ * @returns {THREE.Vector3}
+ */
 export function getCenterPoint(mesh) {
   const middle = new THREE.Vector3();
   const { geometry } = mesh;
@@ -21,6 +31,7 @@ export function getCenterPoint(mesh) {
   middle.z = (geometry.boundingBox.max.z + geometry.boundingBox.min.z) / 2;
 
   mesh.localToWorld(middle);
+
   return middle;
 }
 
@@ -35,37 +46,30 @@ export function addButton(name, func) {
   document.getElementById('Controlinfo').appendChild(btn);
 }
 
-export const domToWorld = (x, y) => {
+/**
+ * Transforms 2d canvas coordinates (from posenet keypoint tracking) to threejs world coordinates
+ *
+ * @export
+ * @param {number} x
+ * @param {number} y
+ * @param {THREE.Camera} camera
+ * @returns {THREE.Vector3}
+ */
+export const canvasDomToWorld = (x, y, camera) => {
   const newPosition = new THREE.Vector3();
   const normalizedX = (x / width) * 2 - 1;
   const normalizedY = ((y - height) / height) * 2 + 1;
 
-  if (threeContext.camera) {
+  if (camera) {
     newPosition.set(normalizedX, -normalizedY, 0);
-    newPosition.unproject(threeContext.camera);
+    newPosition.unproject(camera);
 
-    const dir = newPosition.sub(threeContext.camera.position).normalize();
-    const distance = -threeContext.camera.position.z / dir.z;
-    const pos = threeContext.camera.position.clone().add(dir.multiplyScalar(distance));
+    const dir = newPosition.sub(camera.position).normalize();
+    const distance = -camera.position.z / dir.z;
+    const pos = camera.position.clone().add(dir.multiplyScalar(distance));
 
     return pos;
   }
 
   return new THREE.Vector3(0, 0, 0);
-};
-
-export const rightWrist = new THREE.Vector3();
-
-export const rightWristController = (x, y) => {
-  const pos = domToWorld(x, y);
-
-  rightWrist.set(pos.x, pos.y, 0);
-};
-
-export const leftWrist = new THREE.Vector3();
-
-export const leftWristController = (x, y) => {
-  const pos = domToWorld(x, y);
-
-  leftWrist.set(pos.x, pos.y, 0);
 };

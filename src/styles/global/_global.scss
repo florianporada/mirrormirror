@@ -45,21 +45,6 @@ ul {
   padding: 0;
 }
 
-#Controlinfo {
-  background-color: #c1c1c194;
-  border-radius: 5px;
-  bottom: 5px;
-  display: flex;
-  flex-direction: column;
-  left: 5px;
-  padding: 10px;
-  position: absolute;
-
-  * {
-    margin-bottom: 3px;
-  }
-}
-
 #Loading {
   align-items: center;
   background: #9898ffb5;

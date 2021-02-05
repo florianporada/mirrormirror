@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import dat from 'dat.gui';
 
 import { Lensflare, LensflareElement } from 'three/examples/jsm/objects/Lensflare';
 import { Reflector } from 'three/examples/jsm/objects/Reflector';
@@ -7,12 +8,23 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-import { addButton, leftWrist, setThreeContext } from './utils';
+import { getCenterPoint, setThreeContext } from './utils/three_helper';
 
-import './utils/camera';
+import { joints, initBodyTracking } from './utils/camera';
 
+// Global config
+const gui = new dat.GUI({ width: 300 });
+let globalDebug = false;
+
+// Threejs specific config
 const mixers = [];
 const avatars = [
+  {
+    object: '/assets/models/rigged_body_1/RiggedFigure.gltf',
+    image: '/assets/models/generated_01/swim.png',
+    description: 'The rigged buddy',
+    playAnimation: false,
+  },
   {
     object: '/assets/models/generated_01/result_swim_256.obj',
     image: '/assets/models/generated_01/swim.png',
@@ -62,22 +74,19 @@ const skyboxes = [
   ['map/px.png', 'map/nx.png', 'map/py.png', 'map/ny.png', 'map/pz.png', 'map/nz.png'],
 ];
 
-let globalDebug = false;
 let camera;
+let sound;
 let scene;
 let renderer;
 let clock;
 let controls;
-let avatarIndex = 0;
-let skyboxIndex = 0;
 
-const threeContext = { camera };
 const gltfLoader = new GLTFLoader();
 const objLoader = new OBJLoader();
 const textureLoader = new THREE.TextureLoader();
 const background = new THREE.CubeTextureLoader()
   .setPath('/assets/textures/cube/')
-  .load(skyboxes[skyboxIndex]);
+  .load(skyboxes[0]);
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -113,10 +122,25 @@ function render() {
     movienLight.rotation.x = -Math.cos(delta) / 2;
   }
 
-  const avatar = scene.getObjectByName('avatar');
-  if (avatar) avatar.rotation.y = leftWrist.y;
+  const lookAtPoint = scene.getObjectByName('lookAtPoint');
 
-  console.log(leftWrist);
+  const avatar = scene.getObjectByName('avatar');
+  if (avatar) {
+    avatar.traverse((child) => {
+      if (child.isBone) {
+        // object.position.set(x,y,z);
+        if (child.name === 'neck_joint_1') {
+          const { data } = joints;
+
+          lookAtPoint.position.x = 0 + data.head.x;
+          lookAtPoint.position.y = 2 + data.head.y;
+          lookAtPoint.position.z = 6;
+
+          child.lookAt(getCenterPoint(lookAtPoint));
+        }
+      }
+    });
+  }
 
   renderer.render(scene, camera);
 }
@@ -179,11 +203,9 @@ function addStage({ name, position } = {}) {
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
 
   box.name = name;
-
-  box.position.set(pos.x, pos.y, pos.z);
-
   box.castShadow = true;
   box.receiveShadow = true;
+  box.position.set(pos.x, pos.y, pos.z);
 
   scene.add(box);
 }
@@ -205,16 +227,27 @@ function addStage({ name, position } = {}) {
 //   scene.add(torus);
 // }
 
-function addBody({ url, name, position, isAnimated, type = 'obj' }) {
+function addBody({ url, name, position, playAnimation }) {
   // defaults
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
   const scale = { x: 0.5, y: 0.5, z: 0.5 };
   const loadingDomElement = document.getElementById('Loading');
+  const regexExtension = /[^\\]*\.(\w+)$/;
+  const extension = url.match(regexExtension)[1];
 
-  let loader = objLoader;
+  let loader;
 
-  if (type === 'gltf') {
-    loader = gltfLoader;
+  switch (extension) {
+    case 'obj':
+      loader = objLoader;
+      break;
+    case 'gltf':
+    case 'glb':
+      loader = gltfLoader;
+      break;
+    default:
+      loader = objLoader;
+      console.warn('no valid object deteted (obj, gltf, glb');
   }
 
   loadingDomElement.classList.add('show');
@@ -225,7 +258,7 @@ function addBody({ url, name, position, isAnimated, type = 'obj' }) {
     (object) => {
       const obj = object;
 
-      if (type === 'gltf') {
+      if (extension === 'gltf') {
         obj.scene.name = name;
 
         obj.scene.position.set(pos.x, pos.y, pos.z);
@@ -234,7 +267,7 @@ function addBody({ url, name, position, isAnimated, type = 'obj' }) {
         obj.scene.castShadow = true;
         obj.scene.receiveShadow = true;
 
-        if (isAnimated) {
+        if (obj.animations && obj.animations.length > 0 && playAnimation) {
           const mixer = new THREE.AnimationMixer(obj.scene);
 
           mixers.push(mixer);
@@ -247,7 +280,7 @@ function addBody({ url, name, position, isAnimated, type = 'obj' }) {
         scene.add(obj.scene);
       }
 
-      if (type === 'obj') {
+      if (extension === 'obj') {
         obj.name = name;
 
         scene.add(obj);
@@ -341,6 +374,18 @@ function addCamera({ name, position, debug = false }) {
   }
 }
 
+function addLookAtPoint({ name, position }) {
+  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
+  const geometry = new THREE.SphereGeometry(0.02, 32, 32);
+  const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const sphere = new THREE.Mesh(geometry, material);
+
+  sphere.name = name;
+  sphere.position.set(pos.x, pos.y, pos.z);
+
+  scene.add(sphere);
+}
+
 function addLensflare() {
   const lensflare = new Lensflare();
   const texture0 = textureLoader.load('assets/textures/lensflare/lensflare0.png');
@@ -360,7 +405,7 @@ function addAmbientSound() {
   const listener = new THREE.AudioListener();
 
   // create a global audio source
-  const sound = new THREE.Audio(listener);
+  sound = new THREE.Audio(listener);
 
   // load a sound and set it as the Audio object's buffer
   const audioLoader = new THREE.AudioLoader();
@@ -369,21 +414,6 @@ function addAmbientSound() {
     sound.setLoop(true);
     sound.setVolume(0.1);
   });
-
-  const btn = document.createElement('button');
-  btn.innerHTML = 'sound on';
-  btn.classList.add('control');
-  btn.onclick = function click() {
-    if (sound.isPlaying) {
-      btn.innerHTML = 'sound on';
-      sound.pause();
-    } else {
-      btn.innerHTML = 'sound off';
-      sound.play();
-    }
-  };
-
-  document.getElementById('Controlinfo').appendChild(btn);
 }
 
 function activateEgoView() {
@@ -409,45 +439,24 @@ function activateFlightMode() {
   controls.update();
 }
 
-function loadNextAvatar() {
+function loadNextAvatar(index) {
   while (scene.getObjectByName('avatar')) {
     const avatar = scene.getObjectByName('avatar');
 
     scene.remove(avatar);
   }
 
-  if (avatarIndex >= avatars.length - 1) {
-    avatarIndex = 0;
-  } else {
-    avatarIndex += 1;
-  }
-
-  console.log(`Load avatar ${avatarIndex}: ${avatars[avatarIndex].description}`);
+  console.log(`Load avatar ${index}: ${avatars[index].description}`);
 
   addBody({
-    url: avatars[avatarIndex].object,
+    url: avatars[index].object,
     name: 'avatar',
-    isAnimated: true,
-    type: 'obj',
+    playAnimation: avatars[index].playAnimation,
     position: {
       y: 0.75,
       z: 0,
     },
   });
-}
-
-function switchSkyBox() {
-  if (skyboxIndex >= skyboxes.length - 1) {
-    skyboxIndex = 0;
-  } else {
-    skyboxIndex += 1;
-  }
-
-  const bg = new THREE.CubeTextureLoader()
-    .setPath('assets/textures/cube/')
-    .load(skyboxes[skyboxIndex]);
-
-  scene.background = bg;
 }
 
 function toggleVideoSphere() {
@@ -475,47 +484,10 @@ function toggleVideoSphere() {
   }
 }
 
-function activateKeyboardControls() {
-  function onDocumentKeyDown(event) {
-    const keyCode = event.which;
+function switchSkyBox(idx) {
+  const bg = new THREE.CubeTextureLoader().setPath('assets/textures/cube/').load(skyboxes[idx]);
 
-    if (keyCode === 79) {
-      // 'o'
-      console.log('Ego view');
-
-      activateEgoView();
-    } else if (keyCode === 80) {
-      // 'p'
-      console.log('Flight mode');
-
-      activateFlightMode();
-    } else if (keyCode === 78) {
-      // 'n'
-      console.log('Next model');
-
-      loadNextAvatar();
-    } else if (keyCode === 66) {
-      // 'b'
-      console.log('Next room');
-
-      switchSkyBox();
-    } else if (keyCode === 86) {
-      // 'v'
-      console.log('Video room');
-
-      toggleVideoSphere();
-    }
-  }
-
-  document.addEventListener('keydown', onDocumentKeyDown, false);
-}
-
-function addControlButtons() {
-  addButton('ego view (O)', activateEgoView);
-  addButton('flight mode (P)', activateFlightMode);
-  addButton('next body (N)', loadNextAvatar);
-  addButton('next room (B)', switchSkyBox);
-  addButton('video room (V)', toggleVideoSphere);
+  scene.background = bg;
 }
 
 function displayAxisHelper() {
@@ -591,9 +563,9 @@ function init() {
 
   // Avatar
   addBody({
-    url: avatars[avatarIndex].object,
+    url: avatars[0].object,
     name: 'avatar',
-    isAnimated: true,
+    playAnimation: avatars[0].playAnimation,
     type: 'obj',
     position: {
       y: 0.75,
@@ -610,8 +582,9 @@ function init() {
     },
   });
 
+  addLookAtPoint({ name: 'lookAtPoint', position: new THREE.Vector3(1, 1, 1) });
+
   initRoom();
-  setThreeContext(threeContext);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.autoClear = false;
@@ -623,12 +596,73 @@ function init() {
   document.body.appendChild(renderer.domElement);
   document.body.appendChild(VRButton.createButton(renderer));
 
-  activateKeyboardControls();
   activateFlightMode();
-  addControlButtons();
+  setThreeContext({
+    sound,
+    camera,
+    scene,
+    gui,
+  });
+
   //
   window.addEventListener('resize', onWindowResize, false);
 }
 
+function addThreeControls() {
+  const guiState = {
+    threeControls: {
+      sound: false,
+      view: '3rdPerson',
+      avatarIndex: 0,
+      roomIndex: 0,
+      videoRoom: false,
+    },
+  };
+
+  const appControl = gui.addFolder('Three Controls');
+  const appControlSound = appControl.add(guiState.threeControls, 'sound');
+  const appControlView = appControl.add(guiState.threeControls, 'view', [
+    'firstPerson',
+    '3rdPerson',
+  ]);
+  const appControlVideoRoom = appControl.add(guiState.threeControls, 'videoRoom');
+  const appControlAvatarIndex = appControl.add(
+    guiState.threeControls,
+    'avatarIndex',
+    avatars.map((value, index) => index)
+  );
+  const appControlRoomIndex = appControl.add(
+    guiState.threeControls,
+    'roomIndex',
+    skyboxes.map((value, index) => index)
+  );
+
+  appControlAvatarIndex.onChange((value) => {
+    loadNextAvatar(value);
+  });
+  appControlRoomIndex.onChange((value) => {
+    switchSkyBox(value);
+  });
+  appControlSound.onChange((value) => {
+    if (!value) {
+      sound.pause();
+    } else {
+      sound.play();
+    }
+  });
+  appControlView.onChange((value) => {
+    if (value === '3rdPerson') {
+      activateFlightMode();
+    } else if (value === 'firstPerson') {
+      activateEgoView();
+    }
+  });
+  appControlVideoRoom.onChange(() => {
+    toggleVideoSphere(scene);
+  });
+}
+
 init();
 animate();
+initBodyTracking();
+addThreeControls();
