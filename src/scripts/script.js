@@ -123,7 +123,7 @@ let world;
 const lookAtDirection = new THREE.Vector3();
 const gltfLoader = new GLTFLoader();
 const objLoader = new OBJLoader();
-const textureLoader = new THREE.TextureLoader();
+// const textureLoader = new THREE.TextureLoader();
 // const background = new THREE.CubeTextureLoader()
 //   .setPath('/assets/textures/cube/')
 //   .load(skyboxes[0]);
@@ -277,11 +277,11 @@ function addBody({ url, name, position, scale, playAnimation, texture }) {
               if (node instanceof THREE.Mesh) {
                 // cameraLookAt = getCenterPoint(node);
                 node.geometry.normalizeNormals();
-                const map = textureLoader.load(texture);
+                // const map = textureLoader.load(texture);
                 if (texture) {
-                  node.skinning = false;
-                  node.material.map = map;
-                  node.material.needsUpdate = true;
+                  //   node.skinning = false;
+                  //   node.material.map = map;
+                  //   node.material.needsUpdate = true;
                 }
               }
           }
