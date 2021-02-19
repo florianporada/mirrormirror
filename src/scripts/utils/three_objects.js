@@ -32,10 +32,7 @@ function mirrorObject({ name, rotation, position, size, orbit }) {
     textureWidth: window.innerWidth * window.devicePixelRatio,
     textureHeight: window.innerHeight * window.devicePixelRatio,
   });
-
-  reflector.name = name;
-  reflector.position.set(pos.x, pos.y, pos.z);
-  reflector.rotation.set(rot.x, rot.y, rot.z);
+  reflector.position.z = +0.07;
 
   const frameGeometry = new THREE.BoxBufferGeometry(mirrorSize.x + 0.2, mirrorSize.y + 0.2, 0.1);
   const frameMaterial = new THREE.MeshPhongMaterial({
@@ -46,11 +43,13 @@ function mirrorObject({ name, rotation, position, size, orbit }) {
   });
   const frame = new THREE.Mesh(frameGeometry, frameMaterial);
 
-  frame.position.z = -0.07;
+  frame.name = name;
   frame.castShadow = true;
   frame.receiveShadow = true;
+  frame.position.set(pos.x, pos.y, pos.z);
+  frame.rotation.set(rot.x, rot.y, rot.z);
 
-  reflector.add(frame);
+  frame.add(reflector);
 
   if (orbit) {
     // parent for mirror + pivot etc...
@@ -65,7 +64,7 @@ function mirrorObject({ name, rotation, position, size, orbit }) {
     pivotPoint.rotation.x = 0;
     pivotPoint.rotation.y = 0;
 
-    pivotPoint.add(reflector);
+    pivotPoint.add(frame);
     parent.add(pivotPoint);
 
     return parent;
@@ -75,12 +74,12 @@ function mirrorObject({ name, rotation, position, size, orbit }) {
   // frameGeometry.computeBoundingBox();
   // frameGeometry.translate(0, frameGeometry.boundingBox.max.y, 0);
 
-  return reflector;
+  return frame;
 }
 
 function floorObject({ name, position } = {}) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const boxGeometry = new THREE.BoxBufferGeometry(15, 0.1, 15);
+  const boxGeometry = new THREE.BoxBufferGeometry(15, 0.1, 30);
   const boxMaterial = new THREE.MeshPhongMaterial();
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
 
@@ -88,6 +87,7 @@ function floorObject({ name, position } = {}) {
   box.receiveShadow = true;
   box.castShadow = true;
   box.position.set(pos.x, pos.y, pos.z);
+  // box.rotation.set(0, Math.PI / 3, 0);
 
   return box;
 }
@@ -126,7 +126,7 @@ function furnitureObject({ name, position, rotation, texture, scale, lookAtAvata
     transparent: false,
     map,
     side: THREE.DoubleSide,
-    // alphaTest: 0.5,
+    alphaTest: 0.5,
   });
 
   box = new THREE.Mesh(geometry, material);
@@ -141,7 +141,7 @@ function furnitureObject({ name, position, rotation, texture, scale, lookAtAvata
   box.position.set(pos.x, pos.y, pos.z);
   box.rotation.set(rot.x, rot.y, rot.z);
 
-  if (lookAtAvatar) box.lookAt(0, 0);
+  if (lookAtAvatar) box.lookAt(0, 0, 0);
 
   return box;
 }

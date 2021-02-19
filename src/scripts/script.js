@@ -81,7 +81,7 @@ const roomObjects = {
     obj: mirrorObject({
       name: 'mirror',
       position: { x: 0.25, y: 4, z: 2 },
-      rotation: { y: Math.PI / 2 },
+      rotation: { y: Math.PI, x: 0.02 },
       size: { x: 3, y: 2 },
     }),
   },
@@ -90,10 +90,10 @@ const roomObjects = {
     physics: true,
     obj: furnitureObject({
       name: 'plant',
-      position: { x: 4, y: 10, z: 2.7 },
+      position: { x: 4, y: 3, z: 2.7 },
       texture: '/assets/textures/room_assets/plant1.png',
       scale: 2,
-      lookAtAvatar: true,
+      rotation: { y: Math.PI / 6 },
     }),
   },
   lowboy: {
@@ -218,13 +218,13 @@ function render() {
 
   // // Copy coordinates from Cannon.js to Three.js
   mirror.position.copy(mirrorPhysics.position);
-  // mirror.quaternion.copy(mirrorPhysics.quaternion);
+  mirror.quaternion.copy(mirrorPhysics.quaternion);
 
   const plant = scene.getObjectByName('plant');
   const plantPhysics = world.bodies.find((el) => el.name === `${plant.name}-physics`);
 
   plant.position.copy(plantPhysics.position);
-  // plant.quaternion.copy(plantPhysics.quaternion);
+  plant.quaternion.copy(plantPhysics.quaternion);
 
   // Tween loop
   TWEEN.update();
@@ -472,9 +472,8 @@ window.debug = function debug(state) {
 
 function initCannon() {
   world = new CANNON.World();
-  world.gravity.set(0, -9.82, 0); // m/s²
+  world.gravity.set(0, -19.82, 0); // m/s²
   world.broadphase = new CANNON.NaiveBroadphase();
-  world.solver.iterations = 20;
 
   // Tweak contact properties.
   // Contact stiffness - use to make softer/harder contacts
@@ -484,7 +483,7 @@ function initCannon() {
   world.defaultContactMaterial.contactEquationRelaxation = 4;
 
   const solver = new CANNON.GSSolver();
-  solver.iterations = 7;
+  solver.iterations = 20;
   solver.tolerance = 0.1;
   world.solver = new CANNON.SplitSolver(solver);
   // use this to test non-split solver
@@ -501,19 +500,25 @@ function initObjects(list) {
       const element = objects[index];
 
       if (list[key].physics && !list[key].disable) {
-        const { position } = element;
-        const size = new THREE.Vector3();
-        const boundingBox = new THREE.Box3().setFromObject(element);
+        const { position, quaternion } = element;
+        const { width, height, depth } = element.geometry.parameters;
 
-        boundingBox.getSize(size);
+        console.log(element.name, depth);
 
-        const physicBodySize = new CANNON.Vec3(size.x, size.y, size.z).scale(0.5);
+        const physicBodySize = new CANNON.Vec3(width, height, depth || 0.1).scale(0.5);
         const physicBodyPosition = new CANNON.Vec3(position.x, position.y, position.z);
+        const physicBodyQuat = new CANNON.Quaternion(
+          quaternion.x,
+          quaternion.y,
+          quaternion.z,
+          quaternion.w
+        );
 
         const physicBody = new CANNON.Body({
           mass: element.name === 'floor' ? 0 : 5,
           position: physicBodyPosition, // m
           shape: new CANNON.Box(physicBodySize),
+          quaternion: physicBodyQuat,
         });
         physicBody.name = `${element.name}-physics`;
         physicBody.linearDamping = 0.9;
