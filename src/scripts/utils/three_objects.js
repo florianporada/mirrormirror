@@ -79,7 +79,7 @@ function mirrorObject({ name, rotation, position, size, orbit }) {
 
 function floorObject({ name, position } = {}) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const boxGeometry = new THREE.BoxBufferGeometry(15, 0.1, 30);
+  const boxGeometry = new THREE.BoxBufferGeometry(15, 0.1, 15);
   const boxMaterial = new THREE.MeshPhongMaterial();
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
 

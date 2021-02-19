@@ -8,7 +8,7 @@ import { VRButton } from 'three/examples/jsm/webxr/VRButton';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
 import { setLoadingState } from './utils/helper';
 import { getCenterPoint, setThreeContext } from './utils/three_helper';
@@ -120,8 +120,7 @@ let controls;
 // Cannon
 let world;
 
-const vector = new THREE.Vector3();
-const quat = new THREE.Quaternion();
+const lookAtDirection = new THREE.Vector3();
 const gltfLoader = new GLTFLoader();
 const objLoader = new OBJLoader();
 const textureLoader = new THREE.TextureLoader();
@@ -140,9 +139,9 @@ function render() {
   // const time = performance.now() * 0.0002;
   const delta = clock.getDelta();
 
-  if (controls) {
-    controls.update(delta);
-  }
+  // if (controls) {
+  //   controls.update(delta);
+  // }
 
   mixers.forEach((mxr) => {
     if (mxr) mxr.update(delta);
@@ -169,6 +168,12 @@ function render() {
   if (avatar) {
     const head = scene.getObjectByName(avatars[guiState.threeControls.avatarIndex].headAnchor);
 
+    if (controls?.isPointerLockControls) {
+      camera.getWorldDirection(lookAtDirection);
+
+      head.lookAt(lookAtDirection);
+    }
+
     if (guiState.appControl.posenetActive) {
       const { data } = joints;
 
@@ -193,20 +198,11 @@ function render() {
       rightArm.rotation.z = 0.795543826994568 + data.rightElbow;
     }
 
-    // console.log(head.rotation.x, head.rotation.y, head.rotation.z);
-
     if (renderer.xr.isPresenting) {
       // head.rotation.y += 0.01;
-      camera.getWorldDirection(vector);
-      camera.getWorldQuaternion(quat);
-      // const theta = Math.atan2(vector.x, vector.z);
+      camera.getWorldDirection(lookAtDirection);
 
-      // -0.10289043854794974 1.2608690407074231e-9 -2.4487735245106492e-8
-
-      // const camquat = new THREE.Quaternion().setFromRotationMatrix(camera.matrixWorld);
-
-      // head.quaternion.copy(camquat);
-      head.lookAt(vector);
+      head.lookAt(lookAtDirection);
     }
   }
 
@@ -362,43 +358,32 @@ function addAmbientSound() {
   });
 }
 
-function activateEgoView() {
-  // controls = new OrbitControls(camera, renderer.domElement);
-
-  // controls.enableZoom = false;
-  // controls.enablePan = false;
-  // controls.enableKeys = true;
-  // // controls.autoRotate = true;
-
-  // // x: 0
-  // // y: 1.600000023841858
-  // // z: 0
-  // camera.position.set(0, 1.600000023841858, 3);
-  // // camera.position.set(0, 1.600000023841858, 0.0001);
-  // // camera.lookAt(0, 1.600000023841858, 0.0001);
-  // camera.lookAt(new THREE.Vector3(0, 1.600000023841858, 0));
-
-  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.x = 1;
-  camera.position.y = 1;
-  camera.position.z = 1;
-  camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-  controls = new FirstPersonControls(camera, renderer.domElement);
-  // controls.movementSpeed = 70;
-  // controls.lookSpeed = 0.05;
-  // controls.noFly = true;
-  // controls.lookVertical = false;
+function thirdPerson() {
+  controls = new OrbitControls(camera, renderer.domElement);
   controls.update();
+
+  camera.position.set(-3.609879835590135, 2.572977063101824, -4.954594089199559);
+  camera.lookAt(0, 0, 0);
 }
 
-function activateFlightMode() {
-  controls = new OrbitControls(camera, renderer.domElement);
+function firstPerson() {
+  const mirror = scene.getObjectByName('mirror');
+  controls = new PointerLockControls(camera, document.body);
 
-  camera.position.set(0, 20, 0);
-  camera.lookAt(0, 0, 0);
+  controls.isPointerLockControls = true;
+  controls.lock();
 
-  controls.update();
+  camera.position.set(0, 1.600000023841858, 0.1);
+  camera.lookAt(getCenterPoint(mirror));
+
+  controls.addEventListener('lock', () => {
+    console.log('locked');
+  });
+
+  controls.addEventListener('unlock', () => {
+    console.log('unlocked');
+    thirdPerson();
+  });
 }
 
 function loadNextAvatar(index) {
@@ -536,11 +521,21 @@ function initObjects(list) {
 function init() {
   clock = new THREE.Clock();
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xff8800);
+  scene.background = new THREE.Color(0xfbf1e6);
   scene.fog = new THREE.Fog(0xffffff, 5, 30);
 
   // Debug View
   // debug();
+
+  // Camera
+  addCamera({
+    name: 'camera1',
+    position: { x: -3.609879835590135, y: 2.572977063101824, z: -4.954594089199559 },
+    debug: globalDebug,
+  });
+
+  // Sound
+  addAmbientSound();
 
   // Lights
   const [light1] = lightObject({
@@ -557,16 +552,6 @@ function init() {
   scene.add(light);
 
   scene.add(light1);
-
-  // Sound
-  addAmbientSound();
-
-  // Camera
-  addCamera({
-    name: 'camera1',
-    position: { x: -3.609879835590135, y: 2.572977063101824, z: -4.954594089199559 },
-    debug: globalDebug,
-  });
 
   // Avatar
   addBody({
@@ -596,7 +581,10 @@ function init() {
   document.body.appendChild(renderer.domElement);
   document.body.appendChild(VRButton.createButton(renderer));
 
-  activateFlightMode();
+  // ThirdPerson Controls
+  thirdPerson();
+
+  // Context
   setThreeContext({
     sound,
     camera,
@@ -604,7 +592,7 @@ function init() {
     gui,
   });
 
-  //
+  // Resize
   window.addEventListener('resize', onWindowResize, false);
 }
 
@@ -655,6 +643,14 @@ function addThreeControls() {
   );
   threeControl.add(
     {
+      lock: () => {
+        if (typeof controls.lock === 'function') controls.lock();
+      },
+    },
+    'lock'
+  );
+  threeControl.add(
+    {
       axes: toggleAxesHelper,
     },
     'axes'
@@ -691,9 +687,9 @@ function addThreeControls() {
   });
   threeControlView.onChange((value) => {
     if (value === '3rdPerson') {
-      activateFlightMode();
+      thirdPerson();
     } else if (value === 'firstPerson') {
-      activateEgoView();
+      firstPerson();
     }
   });
   threeControlVideoRoom.onChange(() => {
