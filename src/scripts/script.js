@@ -1,96 +1,133 @@
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
+import cannonDebugger from 'cannon-es-debugger';
 import dat from 'dat.gui';
+import TWEEN from '@tweenjs/tween.js';
 
 import { VRButton } from 'three/examples/jsm/webxr/VRButton';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls';
 
+import { setLoadingState } from './utils/helper';
 import { getCenterPoint, setThreeContext } from './utils/three_helper';
-import { joints, initBodyTracking } from './utils/posenet';
+import { skyboxes, avatars } from './utils/three_data';
+import { joints, initPoseNet } from './utils/posenet';
 import {
   lensflareObject,
   lightObject,
   lookAtObject,
   mirrorObject,
   movingLightObject,
-  platformObject,
+  furnitureObject,
+  floorObject,
 } from './utils/three_objects';
 
 // Global config
-const gui = new dat.GUI({ width: 300 });
 let globalDebug = false;
+const gui = new dat.GUI({ width: 300 });
+const guiState = {
+  appControl: {
+    posenetActive: false,
+  },
+  threeControls: {
+    step: 1,
+    sound: false,
+    view: '3rdPerson',
+    avatarIndex: 1,
+    roomIndex: 0,
+    videoRoom: false,
+  },
+};
 
 // Threejs specific config
 const mixers = [];
-const avatars = [
-  {
-    object: '/assets/models/rigged_body_1/RiggedFigure.gltf',
-    image: '/assets/models/generated_01/swim.png',
-    description: 'The rigged buddy',
-    playAnimation: false,
-  },
-  {
-    object: '/assets/models/generated_01/result_swim_256.obj',
-    image: '/assets/models/generated_01/swim.png',
-    description: 'Some guy in a swimsuit',
-  },
-  {
-    object: '/assets/models/generated_02/result_pirate_256.obj',
-    image: '/assets/models/generated_02/pirate.png',
-    description: 'A pirrrrate',
-  },
-  {
-    object: '/assets/models/generated_03/result_test_256.obj',
-    image: '/assets/models/generated_03/test.png',
-    description: 'The coffee dude',
-  },
-  {
-    object: '/assets/models/generated_04/result_boi_256.obj',
-    image: '/assets/models/generated_04/boi.png',
-    description: 'Not a pirrrrate',
-  },
-  {
-    object: '/assets/models/generated_05/result_boi_bg_256.obj',
-    image: '/assets/models/generated_05/boi_bg.png',
-    description: 'Still noot a pirrrrate',
-  },
-  {
-    object: '/assets/models/generated_06/result_collage_01_256.obj',
-    image: '/assets/models/generated_06/collage_01.png',
-    description: 'Something combined 01',
-  },
-  {
-    object: '/assets/models/generated_07/result_collage_02_256.obj',
-    image: '/assets/models/generated_07/collage_02.png',
-    description: 'Something combined 02',
-  },
-];
-const skyboxes = [
-  [
-    'MilkyWay/dark-s_px.jpg',
-    'MilkyWay/dark-s_nx.jpg',
-    'MilkyWay/dark-s_py.jpg',
-    'MilkyWay/dark-s_ny.jpg',
-    'MilkyWay/dark-s_pz.jpg',
-    'MilkyWay/dark-s_nz.jpg',
-  ],
-  ['tree/px.png', 'tree/nx.png', 'tree/py.png', 'tree/ny.png', 'tree/pz.png', 'tree/nz.png'],
-  ['map/px.png', 'map/nx.png', 'map/py.png', 'map/ny.png', 'map/pz.png', 'map/nz.png'],
+
+const scenes = [
+  { cameraPosition: new THREE.Vector3(2, 2, 2) },
+  { cameraPosition: new THREE.Vector3(2, 3, 3) },
+  { cameraPosition: new THREE.Vector3(2, 3, 3) },
+  { cameraPosition: new THREE.Vector3(1, 3, 3) },
+  { cameraPosition: new THREE.Vector3(5, 4, 3) },
 ];
 
+const sceneIterator = scenes.values();
+
+const roomObjects = {
+  movingLight: {
+    disable: false,
+    obj: movingLightObject({
+      name: 'moving-light',
+      position: { x: -8, y: 0, z: -1 },
+      color: 0xffbb72, // #ffbb72
+    }),
+  },
+  lensflare: { disable: true, obj: lensflareObject() },
+  floor: {
+    disable: false,
+    physics: true,
+    obj: floorObject({
+      name: 'floor',
+      position: {
+        y: -0.1,
+        z: -0,
+      },
+    }),
+  },
+  mirror: {
+    disable: false,
+    physics: true,
+    obj: mirrorObject({
+      name: 'mirror',
+      position: { x: 0.25, y: 4, z: 2 },
+      rotation: { y: Math.PI / 2 },
+      size: { x: 3, y: 2 },
+    }),
+  },
+  plant: {
+    disable: false,
+    physics: true,
+    obj: furnitureObject({
+      name: 'plant',
+      position: { x: 4, y: 10, z: 2.7 },
+      texture: '/assets/textures/room_assets/plant1.png',
+      scale: 2,
+      lookAtAvatar: true,
+    }),
+  },
+  lowboy: {
+    disable: true,
+    obj: furnitureObject({
+      name: 'lowboy',
+      position: { x: -3, y: 0, z: 1.7 },
+      texture: '/assets/textures/room_assets/lowboy.png',
+      scale: 2,
+      lookAtAvatar: true,
+    }),
+  },
+};
+
+// Three
 let camera;
 let sound;
 let scene;
 let renderer;
 let clock;
 let controls;
+// let cameraLookAt;
 
+// Cannon
+let world;
+
+const vector = new THREE.Vector3();
+const quat = new THREE.Quaternion();
 const gltfLoader = new GLTFLoader();
 const objLoader = new OBJLoader();
-const background = new THREE.CubeTextureLoader()
-  .setPath('/assets/textures/cube/')
-  .load(skyboxes[0]);
+const textureLoader = new THREE.TextureLoader();
+// const background = new THREE.CubeTextureLoader()
+//   .setPath('/assets/textures/cube/')
+//   .load(skyboxes[0]);
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -104,15 +141,15 @@ function render() {
   const delta = clock.getDelta();
 
   if (controls) {
-    controls.update();
+    controls.update(delta);
   }
 
   mixers.forEach((mxr) => {
     if (mxr) mxr.update(delta);
   });
 
-  const mirror = scene.getObjectByName('mirror-parent');
-  if (mirror) mirror.rotation.x += 0.005;
+  // const mirror = scene.getObjectByName('mirror-parent');
+  // if (mirror) mirror.rotation.x += 0.005;
 
   const mirror2 = scene.getObjectByName('mirror2-parent');
   if (mirror2) mirror2.rotation.y += 0.005;
@@ -130,22 +167,69 @@ function render() {
 
   const avatar = scene.getObjectByName('avatar');
   if (avatar) {
-    avatar.traverse((child) => {
-      if (child.isBone) {
-        // object.position.set(x,y,z);
-        if (child.name === 'neck_joint_1') {
-          const { data } = joints;
+    const head = scene.getObjectByName(avatars[guiState.threeControls.avatarIndex].headAnchor);
 
-          lookAtPoint.position.x = 0 + data.head.x;
-          lookAtPoint.position.y = 2 + data.head.y;
-          lookAtPoint.position.z = 6;
+    if (guiState.appControl.posenetActive) {
+      const { data } = joints;
 
-          child.lookAt(getCenterPoint(lookAtPoint));
-        }
-      }
-    });
+      const leftShoulder = scene.getObjectByName('upper_armL');
+      const leftArm = scene.getObjectByName('forearmL');
+      const rightShoulder = scene.getObjectByName('upper_armR');
+      const rightArm = scene.getObjectByName('forearmR');
+
+      lookAtPoint.position.x = 0 + data.head.x;
+      lookAtPoint.position.y = 2 + data.head.y;
+      lookAtPoint.position.z = 10;
+
+      // const startPosition = new THREE.Vector3().copy(lookAtPoint.position);
+      // const endPosition = new THREE.Euler().copy(head.rotation);
+      // new TWEEN.Tween(lookAtPoint).to({ position: endPosition }, 200).start();
+
+      head.lookAt(getCenterPoint(lookAtPoint));
+
+      leftShoulder.rotation.z = -1.4677821795587749 + -data.leftShoulder;
+      leftArm.rotation.z = 6.795543826994568 + -data.leftElbow;
+      rightShoulder.rotation.z = 2.0155040367442623 + data.rightShoulder;
+      rightArm.rotation.z = 0.795543826994568 + data.rightElbow;
+    }
+
+    // console.log(head.rotation.x, head.rotation.y, head.rotation.z);
+
+    if (renderer.xr.isPresenting) {
+      // head.rotation.y += 0.01;
+      camera.getWorldDirection(vector);
+      camera.getWorldQuaternion(quat);
+      // const theta = Math.atan2(vector.x, vector.z);
+
+      // -0.10289043854794974 1.2608690407074231e-9 -2.4487735245106492e-8
+
+      // const camquat = new THREE.Quaternion().setFromRotationMatrix(camera.matrixWorld);
+
+      // head.quaternion.copy(camquat);
+      head.lookAt(vector);
+    }
   }
 
+  // Physics loop
+  if (world) world.step(1 / 60);
+
+  const mirror = scene.getObjectByName('mirror');
+  const mirrorPhysics = world.bodies.find((el) => el.name === `${mirror.name}-physics`);
+
+  // // Copy coordinates from Cannon.js to Three.js
+  mirror.position.copy(mirrorPhysics.position);
+  // mirror.quaternion.copy(mirrorPhysics.quaternion);
+
+  const plant = scene.getObjectByName('plant');
+  const plantPhysics = world.bodies.find((el) => el.name === `${plant.name}-physics`);
+
+  plant.position.copy(plantPhysics.position);
+  // plant.quaternion.copy(plantPhysics.quaternion);
+
+  // Tween loop
+  TWEEN.update();
+
+  // Three loop
   renderer.render(scene, camera);
 }
 
@@ -153,28 +237,10 @@ function animate() {
   renderer.setAnimationLoop(render);
 }
 
-// function addGeometry() {
-//   const torusGeometry = new THREE.TorusKnotBufferGeometry(0.4, 0.15, 150, 20);
-//   const torusMaterial = new THREE.MeshStandardMaterial({
-//     roughness: 0.01,
-//     metalness: 0.2,
-//     envMap: background,
-//   });
-//   const torus = new THREE.Mesh(torusGeometry, torusMaterial);
-
-//   torus.position.y = 0.75;
-//   torus.position.z = -2;
-//   torus.castShadow = true;
-//   torus.receiveShadow = true;
-
-//   scene.add(torus);
-// }
-
-function addBody({ url, name, position, playAnimation }) {
+function addBody({ url, name, position, scale, playAnimation, texture }) {
   // defaults
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const scale = { x: 0.5, y: 0.5, z: 0.5 };
-  const loadingDomElement = document.getElementById('Loading');
+  const scl = { ...{ x: 1, y: 1, z: 1 }, ...scale };
   const regexExtension = /[^\\]*\.(\w+)$/;
   const extension = url.match(regexExtension)[1];
 
@@ -193,7 +259,7 @@ function addBody({ url, name, position, playAnimation }) {
       console.warn('no valid object deteted (obj, gltf, glb');
   }
 
-  loadingDomElement.classList.add('show');
+  setLoadingState(true);
   loader.load(
     // resource URL
     url,
@@ -204,11 +270,32 @@ function addBody({ url, name, position, playAnimation }) {
       if (extension === 'gltf') {
         obj.scene.name = name;
 
-        obj.scene.position.set(pos.x, pos.y, pos.z);
-        object.scene.scale.set(scale.x, scale.y, scale.z);
+        obj.scene.traverse((node) => {
+          // eslint-disable-next-line no-param-reassign
+          if (node.isMesh || node.isLight) {
+            /* eslint-disable no-param-reassign */
+            node.receiveShadow = true;
+            node.material.flatShading = false;
+            node.castShadow = true;
+            if (node.isMesh)
+              if (node instanceof THREE.Mesh) {
+                // cameraLookAt = getCenterPoint(node);
+                node.geometry.normalizeNormals();
+                const map = textureLoader.load(texture);
+                if (texture) {
+                  node.skinning = false;
+                  node.material.map = map;
+                  node.material.needsUpdate = true;
+                }
+              }
+          }
+        });
 
         obj.scene.castShadow = true;
         obj.scene.receiveShadow = true;
+        obj.scene.position.set(pos.x, pos.y, pos.z);
+        obj.scene.scale.set(scl.x, scl.y, scl.z);
+        // obj.scene.rotation.y = THREE.MathUtils.degToRad(180);
 
         if (obj.animations && obj.animations.length > 0 && playAnimation) {
           const mixer = new THREE.AnimationMixer(obj.scene);
@@ -225,12 +312,13 @@ function addBody({ url, name, position, playAnimation }) {
 
       if (extension === 'obj') {
         obj.name = name;
+        obj.castShadow = true;
+        obj.receiveShadow = true;
 
         scene.add(obj);
       }
 
-      loadingDomElement.classList.remove('show');
-
+      setLoadingState(false);
       onWindowResize();
     },
     // called when loading is in progresses
@@ -244,32 +332,10 @@ function addBody({ url, name, position, playAnimation }) {
   );
 }
 
-// function addLight({ name, position, color, debug = false }) {
-//   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-
-//   const light = new THREE.DirectionalLight(color);
-
-//   light.name = name;
-
-//   light.position.set(pos.x, pos.y, pos.z);
-//   light.castShadow = true;
-//   light.shadow.camera.zoom = 4;
-
-//   scene.add(light);
-//   light.target.position.set(0, 0, -2);
-
-//   scene.add(light.target);
-
-//   if (debug) {
-//     const helper = new THREE.CameraHelper(light.shadow.camera);
-//     scene.add(helper);
-//   }
-// }
-
 function addCamera({ name, position, debug = false }) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
 
-  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
 
   camera.name = name;
   camera.position.set(pos.x, pos.y, pos.z);
@@ -297,16 +363,32 @@ function addAmbientSound() {
 }
 
 function activateEgoView() {
-  controls = new OrbitControls(camera, renderer.domElement);
+  // controls = new OrbitControls(camera, renderer.domElement);
 
-  controls.enableZoom = false;
-  controls.enablePan = false;
-  controls.enableKeys = true;
-  // controls.autoRotate = true;
+  // controls.enableZoom = false;
+  // controls.enablePan = false;
+  // controls.enableKeys = true;
+  // // controls.autoRotate = true;
 
-  camera.position.set(0, 0, 0.01);
-  camera.lookAt(0, 0, 0.01);
+  // // x: 0
+  // // y: 1.600000023841858
+  // // z: 0
+  // camera.position.set(0, 1.600000023841858, 3);
+  // // camera.position.set(0, 1.600000023841858, 0.0001);
+  // // camera.lookAt(0, 1.600000023841858, 0.0001);
+  // camera.lookAt(new THREE.Vector3(0, 1.600000023841858, 0));
 
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.x = 1;
+  camera.position.y = 1;
+  camera.position.z = 1;
+  camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+  controls = new FirstPersonControls(camera, renderer.domElement);
+  // controls.movementSpeed = 70;
+  // controls.lookSpeed = 0.05;
+  // controls.noFly = true;
+  // controls.lookVertical = false;
   controls.update();
 }
 
@@ -331,6 +413,7 @@ function loadNextAvatar(index) {
   addBody({
     url: avatars[index].object,
     name: 'avatar',
+    texture: avatars[index].image,
     playAnimation: avatars[index].playAnimation,
     position: {
       y: 0.75,
@@ -370,70 +453,86 @@ function switchSkyBox(idx) {
   scene.background = bg;
 }
 
-function displayAxisHelper() {
-  // axis helper
-  const axesHelper = new THREE.AxesHelper(20);
-  scene.add(axesHelper);
+function toggleAxesHelper() {
+  if (scene.getObjectByName('axishelper')) {
+    scene.remove(scene.getObjectByName('axishelper'));
+  } else {
+    // axis helper
+    const axishelper = new THREE.AxesHelper(20);
+    axishelper.name = 'axishelper';
+    scene.add(axishelper);
+  }
 }
 
 window.debug = function debug(state) {
-  displayAxisHelper();
+  toggleAxesHelper();
 
   globalDebug = state;
 };
 
-function initRoom() {
-  // Moving light source
-  const [movinglight] = movingLightObject({
-    name: 'moving-light',
-    position: { x: -8, y: 0, z: -1 },
-    color: 0xffbb72, // #ffbb72
+function initCannon() {
+  world = new CANNON.World();
+  world.gravity.set(0, -9.82, 0); // m/s²
+  world.broadphase = new CANNON.NaiveBroadphase();
+  world.solver.iterations = 20;
+
+  // Tweak contact properties.
+  // Contact stiffness - use to make softer/harder contacts
+  world.defaultContactMaterial.contactEquationStiffness = 1e9;
+
+  // Stabilization time in number of timesteps
+  world.defaultContactMaterial.contactEquationRelaxation = 4;
+
+  const solver = new CANNON.GSSolver();
+  solver.iterations = 7;
+  solver.tolerance = 0.1;
+  world.solver = new CANNON.SplitSolver(solver);
+  // use this to test non-split solver
+  // world.solver = solver
+
+  cannonDebugger(scene, world.bodies);
+}
+
+function initObjects(list) {
+  Object.keys(list).forEach((key) => {
+    const objects = !Array.isArray(list[key].obj) ? [list[key].obj] : list[key].obj;
+
+    for (let index = 0; index < objects.length; index += 1) {
+      const element = objects[index];
+
+      if (list[key].physics && !list[key].disable) {
+        const { position } = element;
+        const size = new THREE.Vector3();
+        const boundingBox = new THREE.Box3().setFromObject(element);
+
+        boundingBox.getSize(size);
+
+        const physicBodySize = new CANNON.Vec3(size.x, size.y, size.z).scale(0.5);
+        const physicBodyPosition = new CANNON.Vec3(position.x, position.y, position.z);
+
+        const physicBody = new CANNON.Body({
+          mass: element.name === 'floor' ? 0 : 5,
+          position: physicBodyPosition, // m
+          shape: new CANNON.Box(physicBodySize),
+        });
+        physicBody.name = `${element.name}-physics`;
+        physicBody.linearDamping = 0.9;
+
+        world.addBody(physicBody);
+      }
+
+      if (element && !list[key].disable) {
+        scene.add(element);
+      }
+    }
   });
-  scene.add(movinglight);
-
-  // Lensflare
-  scene.add(lensflareObject());
-
-  // Mirrors;
-  scene.add(
-    mirrorObject({
-      name: 'mirror',
-      position: { x: 0.25, y: 0.5, z: -5 },
-      // rotation: { y: -Matpwh.PI / 6 },
-    })
-  );
-  scene.add(
-    mirrorObject({
-      name: 'mirror2',
-      position: { x: -3, y: 2, z: -3 },
-      rotation: { y: 0.6, x: 0.8 },
-    })
-  );
-  scene.add(
-    mirrorObject({
-      name: 'mirror3',
-      position: { x: 3, y: 1, z: -2 },
-      rotation: { y: -0.7, x: 0.8 },
-    })
-  );
-
-  // Stage
-  scene.add(
-    platformObject({
-      name: 'stage1',
-      position: {
-        y: -1.1,
-        z: -0,
-      },
-    })
-  );
 }
 
 function init() {
   clock = new THREE.Clock();
   scene = new THREE.Scene();
-  scene.background = background;
-  scene.fog = new THREE.Fog(0x424874, 100, 200);
+  scene.background = new THREE.Color(0xff8800);
+  scene.fog = new THREE.Fog(0xffffff, 5, 30);
 
   // Debug View
   // debug();
@@ -441,16 +540,18 @@ function init() {
   // Lights
   const [light1] = lightObject({
     name: 'light1',
-    position: { x: -1, y: 1.5, z: -1.5 },
-    color: 0x8800ff, // #8800ff
+    position: { x: 1, y: 5.5, z: -0.5 },
+    color: 0xfbf1e6, // #fbf1e6
   });
-  const [light2] = lightObject({
-    name: 'light2',
-    position: { x: 1, y: 1.5, z: -2.5 },
-    color: 0xff0000, // #ff0000
-  });
+  // const [light2] = lightObject({
+  //   name: 'light2',
+  //   position: { x: 1, y: 5.5, z: -4.5 },
+  //   color: 0xfbf116, // #fbf116
+  // });
+  const light = new THREE.AmbientLight(0x404040); // soft white light
+  scene.add(light);
 
-  scene.add(light1, light2);
+  scene.add(light1);
 
   // Sound
   addAmbientSound();
@@ -458,25 +559,27 @@ function init() {
   // Camera
   addCamera({
     name: 'camera1',
-    position: { x: 1, y: 2.2, z: 1 },
+    position: { x: -3.609879835590135, y: 2.572977063101824, z: -4.954594089199559 },
     debug: globalDebug,
   });
 
   // Avatar
   addBody({
-    url: avatars[0].object,
+    url: avatars[guiState.threeControls.avatarIndex].object,
     name: 'avatar',
-    playAnimation: avatars[0].playAnimation,
+    texture: avatars[guiState.threeControls.avatarIndex].image,
+    playAnimation: avatars[guiState.threeControls.avatarIndex].playAnimation,
     type: 'obj',
     position: {
-      y: 0.75,
+      y: 0,
       z: 0,
     },
   });
 
   scene.add(lookAtObject({ name: 'lookAtPoint', position: new THREE.Vector3(1, 1, 1) }));
+  initCannon();
 
-  initRoom();
+  initObjects(roomObjects);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.autoClear = false;
@@ -500,62 +603,103 @@ function init() {
   window.addEventListener('resize', onWindowResize, false);
 }
 
-function addThreeControls() {
-  const guiState = {
-    threeControls: {
-      sound: false,
-      view: '3rdPerson',
-      avatarIndex: 0,
-      roomIndex: 0,
-      videoRoom: false,
-    },
+function sceneHandler() {
+  const { value, done } = sceneIterator.next();
+
+  if (done) return;
+
+  const from = {
+    x: camera.position.x,
+    y: camera.position.y,
+    z: camera.position.z,
   };
 
-  const appControl = gui.addFolder('Three Controls');
-  const appControlSound = appControl.add(guiState.threeControls, 'sound');
-  const appControlView = appControl.add(guiState.threeControls, 'view', [
+  const to = {
+    x: value.cameraPosition.x,
+    y: value.cameraPosition.y,
+    z: value.cameraPosition.z,
+  };
+
+  new TWEEN.Tween(from)
+    .to(to, 600)
+    .easing(TWEEN.Easing.Linear.None)
+    .onUpdate((d) => {
+      camera.position.set(d.x, d.y, d.z);
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+    })
+    .onComplete(() => {
+      controls.target.copy(scene.position);
+    })
+    .start();
+}
+
+function addThreeControls() {
+  const appControl = gui.addFolder('App Control');
+  const appControlPosenet = appControl.add(guiState.appControl, 'posenetActive');
+  appControlPosenet.onChange((value) => {
+    if (value) initPoseNet();
+  });
+
+  const threeControl = gui.addFolder('Three Controls');
+  threeControl.open();
+  threeControl.add(
+    {
+      next: sceneHandler,
+    },
+    'next'
+  );
+  threeControl.add(
+    {
+      axes: toggleAxesHelper,
+    },
+    'axes'
+  );
+  const threeControlSound = threeControl.add(guiState.threeControls, 'sound');
+  const threeControlView = threeControl.add(guiState.threeControls, 'view', [
     'firstPerson',
     '3rdPerson',
   ]);
-  const appControlVideoRoom = appControl.add(guiState.threeControls, 'videoRoom');
-  const appControlAvatarIndex = appControl.add(
+  const threeControlVideoRoom = threeControl.add(guiState.threeControls, 'videoRoom');
+  const threeControlAvatarIndex = threeControl.add(
     guiState.threeControls,
     'avatarIndex',
     avatars.map((value, index) => index)
   );
-  const appControlRoomIndex = appControl.add(
+  const threeControlRoomIndex = threeControl.add(
     guiState.threeControls,
     'roomIndex',
     skyboxes.map((value, index) => index)
   );
 
-  appControl.open();
-  appControlAvatarIndex.onChange((value) => {
+  threeControlAvatarIndex.onChange((value) => {
     loadNextAvatar(value);
   });
-  appControlRoomIndex.onChange((value) => {
+  threeControlRoomIndex.onChange((value) => {
     switchSkyBox(value);
   });
-  appControlSound.onChange((value) => {
+  threeControlSound.onChange((value) => {
     if (!value) {
       sound.pause();
     } else {
       sound.play();
     }
   });
-  appControlView.onChange((value) => {
+  threeControlView.onChange((value) => {
     if (value === '3rdPerson') {
       activateFlightMode();
     } else if (value === 'firstPerson') {
       activateEgoView();
     }
   });
-  appControlVideoRoom.onChange(() => {
+  threeControlVideoRoom.onChange(() => {
     toggleVideoSphere(scene);
   });
 }
 
 init();
 animate();
-initBodyTracking();
 addThreeControls();
+
+if (guiState.appControl.posenetActive) {
+  initPoseNet();
+}

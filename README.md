@@ -46,10 +46,14 @@ The standard behavior of the action is to create a docker image and push it to t
 
   If the commit message contains `skip ci` the GitHub Action will not be triggered.
 
+## Avatar Creation
+
+[OpenPose & PIFuHD - Image to 3D (Google Colab Notebook)](https://colab.research.google.com/drive/17kPOkfYs3o8D6q1441bVTFOTqiNHKzVg#scrollTo=nDHAACbvr_ca)
+
 ## Authors
 
 Laurin Stecher
-[]
+[](#)
 
 Florian Porada
 [Web](http://florianporada.com)

@@ -84,6 +84,12 @@ module.exports = {
       template: './src/404.html',
       inject: 'head',
     }),
+    new HtmlWebpackPlugin({
+      title: 'About',
+      filename: 'about.html',
+      template: './src/about.html',
+      inject: 'head',
+    }),
     // new PreloadWebpackPlugin({
     //   rel: "preload",
     //   as(entry) {

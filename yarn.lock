@@ -1362,6 +1362,11 @@
     regenerator-runtime "^0.13.5"
     yargs "^16.0.3"
 
+"@tweenjs/tween.js@^18.6.4":
+  version "18.6.4"
+  resolved "https://registry.yarnpkg.com/@tweenjs/tween.js/-/tween.js-18.6.4.tgz#40a3d0a93647124872dec8e0fd1bd5926695b6ca"
+  integrity sha512-lB9lMjuqjtuJrx7/kOkqQBtllspPIN+96OvTCeJ2j5FEzinoAXTdAMFnDAQT1KVPRlnYfBrqxtqP66vDM40xxQ==
+
 "@types/anymatch@*":
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/@types/anymatch/-/anymatch-1.3.1.tgz#336badc1beecb9dacc38bea2cf32adf627a8421a"
@@ -2626,6 +2631,16 @@ caniuse-lite@^1.0.0, caniuse-lite@^1.0.30000792, caniuse-lite@^1.0.30000805, can
   version "1.0.30001183"
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001183.tgz#7a57ba9d6584119bb5f2bc76d3cc47ba9356b3e2"
   integrity sha512-7JkwTEE1hlRKETbCFd8HDZeLiQIUcl8rC6JgNjvHCNaxOeNmQ9V4LvQXRUsKIV2CC73qKxljwVhToaA3kLRqTw==
+
+cannon-es-debugger@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/cannon-es-debugger/-/cannon-es-debugger-0.1.2.tgz#c9673adeff1fe97f969b55d4706b6c6ba5422bfa"
+  integrity sha512-oAOQOS0tbst/cOTTFLcuOZg5a6SCycdpcAycz6xjTOEdukvz4+hUihA0CNEhppiBG81yPGiVxOU3S5uHxkZ1/Q==
+
+cannon-es@^0.16.0:
+  version "0.16.0"
+  resolved "https://registry.yarnpkg.com/cannon-es/-/cannon-es-0.16.0.tgz#de9064970e65fe65a271ddb43a98d097edf25389"
+  integrity sha512-hSK5Y0B7dlXMV1SwSIID1lcNoZYvIbHzhLMlBLqe6oLSo0jdR07H/rsKDBmlyayWGjX4lZXV9iZb+AzomzCjXA==
 
 capture-stack-trace@^1.0.0:
   version "1.0.1"

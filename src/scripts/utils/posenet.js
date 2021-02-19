@@ -1,6 +1,6 @@
+/* eslint-disable no-case-declarations */
 /* eslint-disable no-shadow */
 /* eslint-disable no-unused-vars */
-/* eslint-disable no-case-declarations */
 /**
  * @license
  * Copyright 2019 Google LLC. All Rights Reserved.
@@ -27,7 +27,6 @@ import {
   drawKeypoints,
   drawSkeleton,
   isMobile,
-  toggleLoadingUI,
   tryResNetButtonName,
   tryResNetButtonText,
   updateTryResNetButtonDatGuiCss,
@@ -35,6 +34,7 @@ import {
 import Transform from './transform';
 import Joints from './joints';
 import { getThreeContext } from './three_helper';
+import { setLoadingState } from './helper';
 
 export const VIDEO_HEIGHT = 480;
 export const VIDEO_WIDTH = 640;
@@ -127,6 +127,7 @@ const guiState = {
     showBoundingBox: false,
   },
   trackingControl: {
+    trackHead: false,
     trackBody: false,
   },
   net: null,
@@ -297,6 +298,7 @@ function setupGui(cameras, net) {
   output.add(guiState.output, 'showBoundingBox');
 
   const trackingControl = gui.addFolder('Tracking Control');
+  trackingControl.add(guiState.trackingControl, 'trackHead');
   trackingControl.add(guiState.trackingControl, 'trackBody');
   trackingControl.open();
 
@@ -352,21 +354,21 @@ function detectPoseInRealTime(video, net) {
     if (guiState.changeToArchitecture) {
       // Important to purge variables and free up GPU memory
       guiState.net.dispose();
-      toggleLoadingUI(true);
+      setLoadingState(true);
       guiState.net = await posenet.load({
         architecture: guiState.changeToArchitecture,
         outputStride: guiState.outputStride,
         inputResolution: guiState.inputResolution,
         multiplier: guiState.multiplier,
       });
-      toggleLoadingUI(false);
+      setLoadingState(false);
       guiState.architecture = guiState.changeToArchitecture;
       guiState.changeToArchitecture = null;
     }
 
     if (guiState.changeToMultiplier) {
       guiState.net.dispose();
-      toggleLoadingUI(true);
+      setLoadingState(true);
       guiState.net = await posenet.load({
         architecture: guiState.architecture,
         outputStride: guiState.outputStride,
@@ -374,7 +376,7 @@ function detectPoseInRealTime(video, net) {
         multiplier: +guiState.changeToMultiplier,
         quantBytes: guiState.quantBytes,
       });
-      toggleLoadingUI(false);
+      setLoadingState(false);
       guiState.multiplier = +guiState.changeToMultiplier;
       guiState.changeToMultiplier = null;
     }
@@ -382,7 +384,7 @@ function detectPoseInRealTime(video, net) {
     if (guiState.changeToOutputStride) {
       // Important to purge variables and free up GPU memory
       guiState.net.dispose();
-      toggleLoadingUI(true);
+      setLoadingState(true);
       guiState.net = await posenet.load({
         architecture: guiState.architecture,
         outputStride: +guiState.changeToOutputStride,
@@ -390,7 +392,7 @@ function detectPoseInRealTime(video, net) {
         multiplier: guiState.multiplier,
         quantBytes: guiState.quantBytes,
       });
-      toggleLoadingUI(false);
+      setLoadingState(false);
       guiState.outputStride = +guiState.changeToOutputStride;
       guiState.changeToOutputStride = null;
     }
@@ -398,7 +400,7 @@ function detectPoseInRealTime(video, net) {
     if (guiState.changeToInputResolution) {
       // Important to purge variables and free up GPU memory
       guiState.net.dispose();
-      toggleLoadingUI(true);
+      setLoadingState(true);
       guiState.net = await posenet.load({
         architecture: guiState.architecture,
         outputStride: guiState.outputStride,
@@ -406,7 +408,7 @@ function detectPoseInRealTime(video, net) {
         multiplier: guiState.multiplier,
         quantBytes: guiState.quantBytes,
       });
-      toggleLoadingUI(false);
+      setLoadingState(false);
       guiState.inputResolution = +guiState.changeToInputResolution;
       guiState.changeToInputResolution = null;
     }
@@ -414,7 +416,7 @@ function detectPoseInRealTime(video, net) {
     if (guiState.changeToQuantBytes) {
       // Important to purge variables and free up GPU memory
       guiState.net.dispose();
-      toggleLoadingUI(true);
+      setLoadingState(true);
       guiState.net = await posenet.load({
         architecture: guiState.architecture,
         outputStride: guiState.outputStride,
@@ -422,7 +424,7 @@ function detectPoseInRealTime(video, net) {
         multiplier: guiState.multiplier,
         quantBytes: guiState.changeToQuantBytes,
       });
-      toggleLoadingUI(false);
+      setLoadingState(false);
       guiState.quantBytes = guiState.changeToQuantBytes;
       guiState.changeToQuantBytes = null;
     }
@@ -491,22 +493,21 @@ function detectPoseInRealTime(video, net) {
     // scores
     poses.forEach(({ score, keypoints }) => {
       if (score >= minPoseConfidence) {
-        if (guiState.trackingControl.trackBody) {
+        if (guiState.trackingControl.trackBody || guiState.trackingControl.trackHead)
           transform.updateKeypoints(keypoints, minPartConfidence);
-          transform.head();
 
-          const rightShoulderAngle = transform.rotateJoint(
-            'leftShoulder',
-            'rightShoulder',
-            'rightElbow'
-          );
-          const rightArmAngle = transform.rotateJoint('rightShoulder', 'rightElbow', 'rightWrist');
-          const leftShoulderAngle = transform.rotateJoint(
-            'rightShoulder',
-            'leftShoulder',
-            'leftElbow'
-          );
-          const lefArmAngle = transform.rotateJoint('leftShoulder', 'leftElbow', 'leftWrist');
+        if (guiState.trackingControl.trackHead) {
+          transform.head();
+        }
+        if (guiState.trackingControl.trackBody) {
+          // rightShoulderAngle
+          transform.rotateJoint('leftShoulder', 'rightShoulder', 'rightElbow');
+          // rightArmAngle
+          transform.rotateJoint('rightShoulder', 'rightElbow', 'rightWrist');
+          // leftShoulderAngle
+          transform.rotateJoint('rightShoulder', 'leftShoulder', 'leftElbow');
+          // lefArmAngle
+          transform.rotateJoint('leftShoulder', 'leftElbow', 'leftWrist');
         }
 
         if (guiState.output.showPoints) {
@@ -535,7 +536,7 @@ function detectPoseInRealTime(video, net) {
  * available camera devices, and setting off the detectPoseInRealTime function.
  */
 export default async function bindPage() {
-  toggleLoadingUI(true);
+  setLoadingState(true);
   const net = await posenet.load({
     architecture: guiState.input.architecture,
     outputStride: guiState.input.outputStride,
@@ -543,7 +544,7 @@ export default async function bindPage() {
     multiplier: guiState.input.multiplier,
     quantBytes: guiState.input.quantBytes,
   });
-  toggleLoadingUI(false);
+  setLoadingState(false);
 
   let video;
 
@@ -565,6 +566,6 @@ export default async function bindPage() {
 navigator.getUserMedia =
   navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-export function initBodyTracking() {
+export function initPoseNet() {
   bindPage();
 }
