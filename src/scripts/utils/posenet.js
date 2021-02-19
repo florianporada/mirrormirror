@@ -104,6 +104,7 @@ const defaultResNetInputResolution = 250;
 const guiState = {
   algorithm: 'single-pose',
   input: {
+    camera: '',
     architecture: 'MobileNetV1',
     outputStride: defaultMobileNetStride,
     inputResolution: defaultMobileNetInputResolution,
@@ -568,4 +569,18 @@ navigator.getUserMedia =
 
 export function initPoseNet() {
   bindPage();
+}
+
+export function disposePoseNet() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('output');
+  const mediaStream = video.srcObject;
+  const tracks = mediaStream.getTracks();
+
+  tracks.forEach((track) => track.stop());
+  video.pause();
+  video.src = '';
+  canvas.remove();
+
+  guiState.net.dispose();
 }

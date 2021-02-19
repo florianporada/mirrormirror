@@ -49,6 +49,7 @@ ul {
   align-items: center;
   background: #9898ffb5;
   display: flex;
+  flex-direction: column;
   height: 100%;
   justify-content: center;
   left: 0;
@@ -59,9 +60,14 @@ ul {
   width: 100%;
 
   span {
-    font-family: cursive;
     font-size: 8vw;
     text-align: center;
+  }
+
+  .loading-spinner {
+    animation: spin 2s infinite linear;
+    height: 140px;
+    width: auto;
   }
 }
 
@@ -71,4 +77,18 @@ ul {
   position: absolute;
   top: 15px;
   width: calc(640px / 2);
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1.8);
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
 }

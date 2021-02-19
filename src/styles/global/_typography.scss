@@ -12,9 +12,15 @@
     url('fonts/libre-baskerville-v5-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
+@font-face {
+  font-family: 'OrangeJuice';
+  font-style: normal;
+  src: local('OrangeJuice'), url('fonts/orange-juice/orange-juice.ttf') format('TrueType');
+}
+
 //! set font variables
 $font-heading: 'Libre-Baskerville-Reg', Fallback, 'Georgia', serif;
-$font-body: sans-serif;
+$font-body: 'OrangeJuice';
 
 html {
   font-size: 62.5%; // 1rem = 10px, 3.5rem = 35px;

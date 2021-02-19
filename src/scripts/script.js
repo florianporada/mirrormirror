@@ -13,7 +13,7 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { setLoadingState } from './utils/helper';
 import { getCenterPoint, setThreeContext } from './utils/three_helper';
 import { skyboxes, avatars } from './utils/three_data';
-import { joints, initPoseNet } from './utils/posenet';
+import { joints, initPoseNet, disposePoseNet } from './utils/posenet';
 import {
   lensflareObject,
   lightObject,
@@ -630,7 +630,11 @@ function addThreeControls() {
   const appControl = gui.addFolder('App Control');
   const appControlPosenet = appControl.add(guiState.appControl, 'posenetActive');
   appControlPosenet.onChange((value) => {
-    if (value) initPoseNet();
+    if (value) {
+      initPoseNet();
+    } else {
+      disposePoseNet();
+    }
   });
 
   const threeControl = gui.addFolder('Three Controls');
