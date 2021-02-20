@@ -1,3 +1,12 @@
+import * as THREE from 'three';
+import {
+  floorObject,
+  furnitureObject,
+  lensflareObject,
+  mirrorObject,
+  movingLightObject,
+} from './three_objects';
+
 const avatars = [
   {
     object: '/assets/models/rigged_body_1/RiggedFigure.gltf',
@@ -63,4 +72,88 @@ const skyboxes = [
   ['map/px.png', 'map/nx.png', 'map/py.png', 'map/ny.png', 'map/pz.png', 'map/nz.png'],
 ];
 
-export { avatars, skyboxes };
+const scenes = [
+  {
+    cameraPosition: new THREE.Vector3(2, 2, 2),
+    title: 'First',
+    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+  },
+  {
+    cameraPosition: new THREE.Vector3(2, 3, 3),
+    title: 'First',
+    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+  },
+  {
+    cameraPosition: new THREE.Vector3(2, 3, 3),
+    title: 'First',
+    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+  },
+  {
+    cameraPosition: new THREE.Vector3(1, 3, 3),
+    title: 'First',
+    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+  },
+  {
+    cameraPosition: new THREE.Vector3(5, 4, 3),
+    title: 'First',
+    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+  },
+];
+
+const roomObjects = {
+  movingLight: {
+    disable: false,
+    obj: movingLightObject({
+      name: 'moving-light',
+      position: { x: -8, y: 0, z: -1 },
+      color: 0xffbb72, // #ffbb72
+    }),
+  },
+  lensflare: { disable: true, obj: lensflareObject() },
+  floor: {
+    disable: false,
+    physics: true,
+    obj: floorObject({
+      name: 'floor',
+      position: {
+        y: -0.1,
+        z: -0,
+      },
+    }),
+  },
+  mirror: {
+    disable: false,
+    physics: true,
+    obj: mirrorObject({
+      name: 'mirror',
+      position: { x: 0.25, y: 2, z: 2 },
+      rotation: { y: THREE.MathUtils.degToRad(180), x: 0.02 },
+      size: { x: 3, y: 2 },
+    }),
+  },
+  plant: {
+    disable: false,
+    physics: true,
+    obj: furnitureObject({
+      name: 'plant',
+      position: { x: 4, y: 2, z: 2.7 },
+      texture: '/assets/textures/room_assets/plant1.png',
+      scale: 2,
+      rotation: { y: THREE.MathUtils.degToRad(30) },
+    }),
+  },
+  lowboy: {
+    disable: false,
+    physics: true,
+    obj: furnitureObject({
+      name: 'lowboy',
+      position: { x: -3, y: 2, z: 1.7 },
+      rotation: { y: THREE.MathUtils.degToRad(-30), x: 0.01 },
+      texture: '/assets/textures/room_assets/lowboy.png',
+      scale: 2,
+      lookAtAvatar: false,
+    }),
+  },
+};
+
+export { avatars, skyboxes, scenes, roomObjects };

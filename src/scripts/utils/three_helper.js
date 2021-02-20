@@ -73,3 +73,15 @@ export const canvasDomToWorld = (x, y, camera) => {
 
   return new THREE.Vector3(0, 0, 0);
 };
+
+export function toggleAxesHelper() {
+  const { scene } = threeContext;
+  if (scene.getObjectByName('axishelper')) {
+    scene.remove(scene.getObjectByName('axishelper'));
+  } else {
+    // axis helper
+    const axishelper = new THREE.AxesHelper(20);
+    axishelper.name = 'axishelper';
+    scene.add(axishelper);
+  }
+}

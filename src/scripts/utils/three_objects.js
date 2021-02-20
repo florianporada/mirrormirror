@@ -105,45 +105,47 @@ function lookAtObject({ name, position }) {
 }
 
 function furnitureObject({ name, position, rotation, texture, scale, lookAtAvatar }) {
-  let box;
-  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
-  const scl = scale || 1;
-  const map = textureLoader.load(texture, (tex) => {
-    // eslint-disable-next-line no-param-reassign
-    tex.needsUpdate = true;
-    box.scale.set(1.0 * scl, (map.image.height / map.image.width) * scl);
+  return new Promise((resolve) => {
+    let box;
+    const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
+    const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
+    const scl = scale || 1;
+    const map = textureLoader.load(texture, (tex) => {
+      // eslint-disable-next-line no-param-reassign
+      tex.needsUpdate = true;
+      box.geometry = new THREE.PlaneGeometry(
+        1.0 * scl,
+        (map.image.height / map.image.width) * scl,
+        1
+      );
+
+      resolve(box);
+    });
+    map.anisotropy = 16;
+
+    const geometry = new THREE.PlaneGeometry(1, 1, 1);
+
+    const material = new THREE.MeshLambertMaterial({
+      transparent: false,
+      map,
+      side: THREE.DoubleSide,
+      alphaTest: 0.5,
+    });
+
+    box = new THREE.Mesh(geometry, material);
+    box.name = name;
+    box.receiveShadow = true;
+    box.castShadow = true;
+    box.customDepthMaterial = new THREE.MeshDepthMaterial({
+      depthPacking: THREE.RGBADepthPacking,
+      map,
+      alphaTest: 0.5,
+    });
+    box.position.set(pos.x, pos.y, pos.z);
+    box.rotation.set(rot.x, rot.y, rot.z);
+
+    if (lookAtAvatar) box.lookAt(0, 0, 0);
   });
-  map.anisotropy = 16;
-
-  const geometry = new THREE.PlaneGeometry(1, 1, 1);
-
-  // set origin to floor level
-  geometry.computeBoundingBox();
-  geometry.translate(0, geometry.boundingBox.max.y, 0);
-
-  const material = new THREE.MeshLambertMaterial({
-    transparent: false,
-    map,
-    side: THREE.DoubleSide,
-    alphaTest: 0.5,
-  });
-
-  box = new THREE.Mesh(geometry, material);
-  box.name = name;
-  box.receiveShadow = true;
-  box.castShadow = true;
-  box.customDepthMaterial = new THREE.MeshDepthMaterial({
-    depthPacking: THREE.RGBADepthPacking,
-    map,
-    alphaTest: 0.5,
-  });
-  box.position.set(pos.x, pos.y, pos.z);
-  box.rotation.set(rot.x, rot.y, rot.z);
-
-  if (lookAtAvatar) box.lookAt(0, 0, 0);
-
-  return box;
 }
 
 function movingLightObject({ name, position, color, debug = false }) {

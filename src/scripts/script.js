@@ -11,18 +11,10 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
 import { setLoadingState } from './utils/helper';
-import { getCenterPoint, setThreeContext } from './utils/three_helper';
-import { skyboxes, avatars } from './utils/three_data';
+import { getCenterPoint, setThreeContext, toggleAxesHelper } from './utils/three_helper';
+import { skyboxes, avatars, scenes, roomObjects } from './utils/three_data';
 import { joints, initPoseNet, disposePoseNet } from './utils/posenet';
-import {
-  lensflareObject,
-  lightObject,
-  lookAtObject,
-  mirrorObject,
-  movingLightObject,
-  furnitureObject,
-  floorObject,
-} from './utils/three_objects';
+import { lightObject, lookAtObject } from './utils/three_objects';
 
 // Global config
 let globalDebug = false;
@@ -44,69 +36,7 @@ const guiState = {
 // Threejs specific config
 const mixers = [];
 
-const scenes = [
-  { cameraPosition: new THREE.Vector3(2, 2, 2) },
-  { cameraPosition: new THREE.Vector3(2, 3, 3) },
-  { cameraPosition: new THREE.Vector3(2, 3, 3) },
-  { cameraPosition: new THREE.Vector3(1, 3, 3) },
-  { cameraPosition: new THREE.Vector3(5, 4, 3) },
-];
-
 const sceneIterator = scenes.values();
-
-const roomObjects = {
-  movingLight: {
-    disable: false,
-    obj: movingLightObject({
-      name: 'moving-light',
-      position: { x: -8, y: 0, z: -1 },
-      color: 0xffbb72, // #ffbb72
-    }),
-  },
-  lensflare: { disable: true, obj: lensflareObject() },
-  floor: {
-    disable: false,
-    physics: true,
-    obj: floorObject({
-      name: 'floor',
-      position: {
-        y: -0.1,
-        z: -0,
-      },
-    }),
-  },
-  mirror: {
-    disable: false,
-    physics: true,
-    obj: mirrorObject({
-      name: 'mirror',
-      position: { x: 0.25, y: 4, z: 2 },
-      rotation: { y: Math.PI, x: 0.02 },
-      size: { x: 3, y: 2 },
-    }),
-  },
-  plant: {
-    disable: false,
-    physics: true,
-    obj: furnitureObject({
-      name: 'plant',
-      position: { x: 4, y: 3, z: 2.7 },
-      texture: '/assets/textures/room_assets/plant1.png',
-      scale: 2,
-      rotation: { y: Math.PI / 6 },
-    }),
-  },
-  lowboy: {
-    disable: true,
-    obj: furnitureObject({
-      name: 'lowboy',
-      position: { x: -3, y: 0, z: 1.7 },
-      texture: '/assets/textures/room_assets/lowboy.png',
-      scale: 2,
-      lookAtAvatar: true,
-    }),
-  },
-};
 
 // Three
 let camera;
@@ -139,9 +69,9 @@ function render() {
   // const time = performance.now() * 0.0002;
   const delta = clock.getDelta();
 
-  // if (controls) {
-  //   controls.update(delta);
-  // }
+  if (typeof controls.update === 'function') {
+    controls.update(delta);
+  }
 
   mixers.forEach((mxr) => {
     if (mxr) mxr.update(delta);
@@ -171,6 +101,8 @@ function render() {
     if (controls?.isPointerLockControls) {
       camera.getWorldDirection(lookAtDirection);
 
+      lookAtDirection.setY(lookAtDirection.y + 0.85);
+
       head.lookAt(lookAtDirection);
     }
 
@@ -185,10 +117,6 @@ function render() {
       lookAtPoint.position.x = 0 + data.head.x;
       lookAtPoint.position.y = 2 + data.head.y;
       lookAtPoint.position.z = 10;
-
-      // const startPosition = new THREE.Vector3().copy(lookAtPoint.position);
-      // const endPosition = new THREE.Euler().copy(head.rotation);
-      // new TWEEN.Tween(lookAtPoint).to({ position: endPosition }, 200).start();
 
       head.lookAt(getCenterPoint(lookAtPoint));
 
@@ -210,17 +138,28 @@ function render() {
   if (world) world.step(1 / 60);
 
   const mirror = scene.getObjectByName('mirror');
-  const mirrorPhysics = world.bodies.find((el) => el.name === `${mirror.name}-physics`);
+  if (mirror) {
+    const mirrorPhysics = world.bodies.find((el) => el.name === `${mirror.name}-physics`);
 
-  // // Copy coordinates from Cannon.js to Three.js
-  mirror.position.copy(mirrorPhysics.position);
-  mirror.quaternion.copy(mirrorPhysics.quaternion);
+    mirror.position.copy(mirrorPhysics.position);
+    mirror.quaternion.copy(mirrorPhysics.quaternion);
+  }
 
   const plant = scene.getObjectByName('plant');
-  const plantPhysics = world.bodies.find((el) => el.name === `${plant.name}-physics`);
+  if (plant) {
+    const plantPhysics = world.bodies.find((el) => el.name === `${plant.name}-physics`);
 
-  plant.position.copy(plantPhysics.position);
-  plant.quaternion.copy(plantPhysics.quaternion);
+    plant.position.copy(plantPhysics.position);
+    plant.quaternion.copy(plantPhysics.quaternion);
+  }
+
+  const lowboy = scene.getObjectByName('lowboy');
+  if (lowboy) {
+    const lowboyPhysics = world.bodies.find((el) => el.name === `${lowboy.name}-physics`);
+
+    lowboy.position.copy(lowboyPhysics.position);
+    lowboy.quaternion.copy(lowboyPhysics.quaternion);
+  }
 
   // Tween loop
   TWEEN.update();
@@ -381,17 +320,14 @@ function firstPerson() {
   });
 
   controls.addEventListener('unlock', () => {
-    console.log('unlocked');
     thirdPerson();
   });
 }
 
 function loadNextAvatar(index) {
-  while (scene.getObjectByName('avatar')) {
-    const avatar = scene.getObjectByName('avatar');
+  const avatar = scene.getObjectByName('avatar');
 
-    scene.remove(avatar);
-  }
+  scene.remove(avatar);
 
   console.log(`Load avatar ${index}: ${avatars[index].description}`);
 
@@ -438,17 +374,6 @@ function switchSkyBox(idx) {
   scene.background = bg;
 }
 
-function toggleAxesHelper() {
-  if (scene.getObjectByName('axishelper')) {
-    scene.remove(scene.getObjectByName('axishelper'));
-  } else {
-    // axis helper
-    const axishelper = new THREE.AxesHelper(20);
-    axishelper.name = 'axishelper';
-    scene.add(axishelper);
-  }
-}
-
 window.debug = function debug(state) {
   toggleAxesHelper();
 
@@ -468,7 +393,7 @@ function initCannon() {
   world.defaultContactMaterial.contactEquationRelaxation = 4;
 
   const solver = new CANNON.GSSolver();
-  solver.iterations = 20;
+  solver.iterations = 10;
   solver.tolerance = 0.1;
   world.solver = new CANNON.SplitSolver(solver);
   // use this to test non-split solver
@@ -477,19 +402,17 @@ function initCannon() {
   cannonDebugger(scene, world.bodies);
 }
 
-function initObjects(list) {
-  Object.keys(list).forEach((key) => {
+async function initObjects(list) {
+  Object.keys(list).forEach(async (key) => {
     const objects = !Array.isArray(list[key].obj) ? [list[key].obj] : list[key].obj;
 
     for (let index = 0; index < objects.length; index += 1) {
-      const element = objects[index];
+      // eslint-disable-next-line no-await-in-loop
+      const element = await objects[index];
 
       if (list[key].physics && !list[key].disable) {
         const { position, quaternion } = element;
         const { width, height, depth } = element.geometry.parameters;
-
-        console.log(element.name, depth);
-
         const physicBodySize = new CANNON.Vec3(width, height, depth || 0.1).scale(0.5);
         const physicBodyPosition = new CANNON.Vec3(position.x, position.y, position.z);
         const physicBodyQuat = new CANNON.Quaternion(
