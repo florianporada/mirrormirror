@@ -47,7 +47,7 @@ ul {
 
 #loading {
   align-items: center;
-  background: #9898ffb5;
+  background: #868686b5;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -59,13 +59,15 @@ ul {
   transition: opacity 0.5s;
   width: 100%;
 
-  span {
-    font-size: 8vw;
+  .loading-text {
+    color: #e8e86a;
+    font-size: 5rem;
     text-align: center;
+    z-index: 1;
   }
 
   .loading-spinner {
-    animation: spin 2s infinite linear;
+    animation: spin 3s infinite linear;
     height: 140px;
     width: auto;
   }
@@ -85,10 +87,14 @@ ul {
   }
 
   50% {
-    transform: rotate(180deg) scale(1.8);
+    transform: rotate(10deg) scale(7.8);
+  }
+
+  90% {
+    transform: rotate(-20deg) scale(3.8);
   }
 
   100% {
-    transform: rotate(360deg) scale(1);
+    transform: rotate(0deg) scale(1);
   }
 }

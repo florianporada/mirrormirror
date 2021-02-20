@@ -33,19 +33,17 @@ const guiState = {
   },
 };
 
-// Threejs specific config
+// Three
 const mixers = [];
-
 const sceneIterator = scenes.values();
 
-// Three
 let camera;
 let sound;
 let scene;
 let renderer;
 let clock;
 let controls;
-// let cameraLookAt;
+let currentScene = sceneIterator.next();
 
 // Cannon
 let world;
@@ -58,6 +56,36 @@ const objLoader = new OBJLoader();
 //   .setPath('/assets/textures/cube/')
 //   .load(skyboxes[0]);
 
+function sceneHandler(iter) {
+  if (iter.done) return;
+
+  currentScene = iter.value;
+
+  const from = {
+    x: camera.position.x,
+    y: camera.position.y,
+    z: camera.position.z,
+  };
+
+  const to = {
+    x: currentScene.cameraPosition.x,
+    y: currentScene.cameraPosition.y,
+    z: currentScene.cameraPosition.z,
+  };
+
+  new TWEEN.Tween(from)
+    .to(to, 600)
+    .easing(TWEEN.Easing.Quadratic.InOut)
+    .onUpdate((d) => {
+      camera.position.set(d.x, d.y, d.z);
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+    })
+    .onComplete(() => {
+      controls.target.copy(scene.position);
+    })
+    .start();
+}
+
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -65,7 +93,7 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function render() {
+async function render() {
   // const time = performance.now() * 0.0002;
   const delta = clock.getDelta();
 
@@ -77,17 +105,16 @@ function render() {
     if (mxr) mxr.update(delta);
   });
 
-  // const mirror = scene.getObjectByName('mirror-parent');
-  // if (mirror) mirror.rotation.x += 0.005;
+  // Scene Config
+  if (currentScene.options.rotate) {
+    controls.autoRotate = true;
+  } else {
+    controls.autoRotate = false;
+  }
 
-  const mirror2 = scene.getObjectByName('mirror2-parent');
-  if (mirror2) mirror2.rotation.y += 0.005;
+  if (roomObjects.movienLight?.obj[0].name) {
+    const movienLight = roomObjects.movienLight.obj[0];
 
-  const mirror3 = scene.getObjectByName('mirror3-parent');
-  if (mirror3) mirror3.rotation.z -= 0.005;
-
-  const movienLight = scene.getObjectByName('moving-light-parent');
-  if (movienLight) {
     movienLight.rotation.y += 0.01;
     movienLight.rotation.x = -Math.cos(delta) / 2;
   }
@@ -126,8 +153,7 @@ function render() {
       rightArm.rotation.z = 0.795543826994568 + data.rightElbow;
     }
 
-    if (renderer.xr.isPresenting) {
-      // head.rotation.y += 0.01;
+    if (renderer.xr.isPresenting && !guiState.appControl.posenetActive) {
       camera.getWorldDirection(lookAtDirection);
 
       head.lookAt(lookAtDirection);
@@ -137,24 +163,24 @@ function render() {
   // Physics loop
   if (world) world.step(1 / 60);
 
-  const mirror = scene.getObjectByName('mirror');
-  if (mirror) {
+  if (roomObjects.mirror.obj.name) {
+    const mirror = roomObjects.mirror.obj;
     const mirrorPhysics = world.bodies.find((el) => el.name === `${mirror.name}-physics`);
 
     mirror.position.copy(mirrorPhysics.position);
     mirror.quaternion.copy(mirrorPhysics.quaternion);
   }
 
-  const plant = scene.getObjectByName('plant');
-  if (plant) {
+  const plant = await roomObjects.plant.obj;
+  if (plant.name) {
     const plantPhysics = world.bodies.find((el) => el.name === `${plant.name}-physics`);
 
     plant.position.copy(plantPhysics.position);
     plant.quaternion.copy(plantPhysics.quaternion);
   }
 
-  const lowboy = scene.getObjectByName('lowboy');
-  if (lowboy) {
+  const lowboy = await roomObjects.lowboy.obj;
+  if (lowboy.name) {
     const lowboyPhysics = world.bodies.find((el) => el.name === `${lowboy.name}-physics`);
 
     lowboy.position.copy(lowboyPhysics.position);
@@ -515,38 +541,11 @@ function init() {
     gui,
   });
 
+  // Init first scene
+  sceneHandler(currentScene);
+
   // Resize
   window.addEventListener('resize', onWindowResize, false);
-}
-
-function sceneHandler() {
-  const { value, done } = sceneIterator.next();
-
-  if (done) return;
-
-  const from = {
-    x: camera.position.x,
-    y: camera.position.y,
-    z: camera.position.z,
-  };
-
-  const to = {
-    x: value.cameraPosition.x,
-    y: value.cameraPosition.y,
-    z: value.cameraPosition.z,
-  };
-
-  new TWEEN.Tween(from)
-    .to(to, 600)
-    .easing(TWEEN.Easing.Linear.None)
-    .onUpdate((d) => {
-      camera.position.set(d.x, d.y, d.z);
-      camera.lookAt(new THREE.Vector3(0, 0, 0));
-    })
-    .onComplete(() => {
-      controls.target.copy(scene.position);
-    })
-    .start();
 }
 
 function addThreeControls() {
@@ -564,7 +563,10 @@ function addThreeControls() {
   threeControl.open();
   threeControl.add(
     {
-      next: sceneHandler,
+      next: () => {
+        const current = sceneIterator.next();
+        sceneHandler(current);
+      },
     },
     'next'
   );

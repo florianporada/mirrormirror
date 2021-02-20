@@ -26,13 +26,19 @@ export function dummy() {
 /**
  * Toggles between the loading UI and the main canvas UI.
  */
-export function setLoadingState(showLoadingUI, loadingDivId = 'loading', mainDivId = 'main') {
+export function setLoadingState(showLoadingUI, message = 'loading...') {
+  const loading = document.getElementById('loading');
+  const loadingMessage = loading.getElementsByClassName('loading-message');
+  const main = document.getElementById('main');
+
   if (showLoadingUI) {
-    document.getElementById(loadingDivId).style.display = 'flex';
-    document.getElementById(mainDivId).style.display = 'none';
+    loadingMessage[0].textContent = message;
+    loading.style.display = 'flex';
+    main.style.display = 'none';
   } else {
-    document.getElementById(loadingDivId).style.display = 'none';
-    document.getElementById(mainDivId).style.display = 'flex';
+    loadingMessage[0].textContent = '';
+    loading.style.display = 'none';
+    main.style.display = 'block';
   }
 }
 

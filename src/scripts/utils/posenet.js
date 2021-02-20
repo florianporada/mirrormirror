@@ -536,8 +536,8 @@ function detectPoseInRealTime(video, net) {
  * Kicks off the demo by loading the posenet model, finding and loading
  * available camera devices, and setting off the detectPoseInRealTime function.
  */
-export default async function bindPage() {
-  setLoadingState(true);
+export async function initPoseNet() {
+  setLoadingState(true, 'Connecting to your body');
   const net = await posenet.load({
     architecture: guiState.input.architecture,
     outputStride: guiState.input.outputStride,
@@ -545,7 +545,6 @@ export default async function bindPage() {
     multiplier: guiState.input.multiplier,
     quantBytes: guiState.input.quantBytes,
   });
-  setLoadingState(false);
 
   let video;
 
@@ -562,25 +561,35 @@ export default async function bindPage() {
   setupGui([], net);
   setupFPS();
   detectPoseInRealTime(video, net);
+  setLoadingState(false);
 }
 
 navigator.getUserMedia =
   navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-export function initPoseNet() {
-  bindPage();
-}
-
 export function disposePoseNet() {
   const video = document.getElementById('video');
   const canvas = document.getElementById('output');
+  const context = canvas.getContext('2d');
   const mediaStream = video.srcObject;
   const tracks = mediaStream.getTracks();
+  const { gui } = getThreeContext();
+  /* eslint-disable no-underscore-dangle */
+  const folders = [
+    gui.__folders.Input,
+    gui.__folders.Output,
+    gui.__folders['Multi Pose Detection'],
+    gui.__folders['Single Pose Detection'],
+    gui.__folders['Tracking Control'],
+  ];
+  /* eslint-enable no-underscore-dangle */
 
+  context.clearRect(0, 0, canvas.width, canvas.height);
   tracks.forEach((track) => track.stop());
   video.pause();
   video.src = '';
-  canvas.remove();
+
+  folders.forEach((folder) => gui.removeFolder(folder));
 
   guiState.net.dispose();
 }

@@ -74,32 +74,48 @@ const skyboxes = [
 
 const scenes = [
   {
-    cameraPosition: new THREE.Vector3(2, 2, 2),
+    cameraPosition: new THREE.Vector3(2, 10, 17),
     title: 'First',
     text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+    options: {
+      rotate: true,
+    },
+  },
+  {
+    cameraPosition: new THREE.Vector3(-5, 3, 13),
+    title: 'First',
+    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+    options: {
+      rotate: false,
+    },
   },
   {
     cameraPosition: new THREE.Vector3(2, 3, 3),
     title: 'First',
     text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+    options: {
+      rotate: false,
+    },
   },
   {
-    cameraPosition: new THREE.Vector3(2, 3, 3),
+    cameraPosition: new THREE.Vector3(1, 23, 3),
     title: 'First',
     text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+    options: {
+      rotate: false,
+    },
   },
   {
-    cameraPosition: new THREE.Vector3(1, 3, 3),
+    cameraPosition: new THREE.Vector3(51, 4, 3),
     title: 'First',
     text: 'Commodo vivamus penatibus sociis senectus vel auctor',
-  },
-  {
-    cameraPosition: new THREE.Vector3(5, 4, 3),
-    title: 'First',
-    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+    options: {
+      rotate: true,
+    },
   },
 ];
 
+const dropHeight = 4;
 const roomObjects = {
   movingLight: {
     disable: false,
@@ -126,8 +142,8 @@ const roomObjects = {
     physics: true,
     obj: mirrorObject({
       name: 'mirror',
-      position: { x: 0.25, y: 2, z: 2 },
-      rotation: { y: THREE.MathUtils.degToRad(180), x: 0.02 },
+      position: { x: 0.25, y: dropHeight + 2, z: 2 },
+      rotation: { y: THREE.MathUtils.degToRad(180), x: 0.013 },
       size: { x: 3, y: 2 },
     }),
   },
@@ -136,7 +152,7 @@ const roomObjects = {
     physics: true,
     obj: furnitureObject({
       name: 'plant',
-      position: { x: 4, y: 2, z: 2.7 },
+      position: { x: 4, y: dropHeight + 2, z: 2.7 },
       texture: '/assets/textures/room_assets/plant1.png',
       scale: 2,
       rotation: { y: THREE.MathUtils.degToRad(30) },
@@ -147,8 +163,8 @@ const roomObjects = {
     physics: true,
     obj: furnitureObject({
       name: 'lowboy',
-      position: { x: -3, y: 2, z: 1.7 },
-      rotation: { y: THREE.MathUtils.degToRad(-30), x: 0.01 },
+      position: { x: -3, y: dropHeight + 2, z: 1.7 },
+      rotation: { y: THREE.MathUtils.degToRad(-210), x: 0.01 },
       texture: '/assets/textures/room_assets/lowboy.png',
       scale: 2,
       lookAtAvatar: false,
