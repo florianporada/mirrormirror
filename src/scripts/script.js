@@ -128,7 +128,7 @@ async function render() {
     if (controls?.isPointerLockControls) {
       camera.getWorldDirection(lookAtDirection);
 
-      lookAtDirection.setY(lookAtDirection.y + 0.85);
+      lookAtDirection.setY(lookAtDirection.y + 1.15);
 
       head.lookAt(lookAtDirection);
     }
@@ -471,7 +471,7 @@ function init() {
   clock = new THREE.Clock();
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xfbf1e6);
-  scene.fog = new THREE.Fog(0xffffff, 5, 30);
+  scene.fog = new THREE.Fog(0xffffff, 5, 60);
 
   // Debug View
   // debug();
