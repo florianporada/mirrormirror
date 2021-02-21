@@ -14,7 +14,7 @@ import { setLoadingState } from './utils/helper';
 import { getCenterPoint, setThreeContext, toggleAxesHelper } from './utils/three_helper';
 import { skyboxes, avatars, storyboard, roomObjects } from './utils/three_data';
 import { joints, initPoseNet, disposePoseNet } from './utils/posenet';
-import { lightObject, lookAtObject } from './utils/three_objects';
+import { lightObject, lookAtObject, sphereObject } from './utils/three_objects';
 
 // Global config
 let globalDebug = false;
@@ -364,28 +364,12 @@ function loadNextAvatar(index) {
   });
 }
 
-function toggleVideoSphere() {
-  if (scene.getObjectByName('videosphere')) {
-    scene.remove(scene.getObjectByName('videosphere'));
+function toggleSphere() {
+  const name = 'worldsphere';
+  if (scene.getObjectByName(name)) {
+    scene.remove(scene.getObjectByName(name));
   } else {
-    const video = document.createElement('video');
-
-    video.src = 'assets/textures/video/background_video.mp4';
-    video.load();
-    video.play();
-
-    const videoTexture = new THREE.VideoTexture(video);
-    const geometry = new THREE.SphereGeometry(25, 32, 32);
-    const videoMaterial = new THREE.MeshBasicMaterial({
-      map: videoTexture,
-      side: THREE.DoubleSide,
-      toneMapped: false,
-    });
-
-    const sphere = new THREE.Mesh(geometry, videoMaterial);
-
-    sphere.name = 'videosphere';
-    scene.add(sphere);
+    scene.add(sphereObject({ name, size: 15, texture: 'assets/textures/fisheye_sphere.jpg' }));
   }
 }
 
@@ -590,12 +574,17 @@ function addThreeControls() {
     },
     'debugView'
   );
+  threeControl.add(
+    {
+      'World Sphere': toggleSphere,
+    },
+    'World Sphere'
+  );
   const threeControlSound = threeControl.add(guiState.threeControls, 'sound');
   const threeControlView = threeControl.add(guiState.threeControls, 'view', [
     'firstPerson',
     '3rdPerson',
   ]);
-  const threeControlVideoRoom = threeControl.add(guiState.threeControls, 'videoRoom');
   const threeControlAvatarIndex = threeControl.add(
     guiState.threeControls,
     'avatarIndex',
@@ -626,9 +615,6 @@ function addThreeControls() {
     } else if (value === 'firstPerson') {
       firstPerson();
     }
-  });
-  threeControlVideoRoom.onChange(() => {
-    toggleVideoSphere(scene);
   });
 
   gui.close();

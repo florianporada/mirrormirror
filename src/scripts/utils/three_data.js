@@ -134,6 +134,7 @@ const roomObjects = {
     physics: true,
     obj: floorObject({
       name: 'floor',
+      size: 30,
       position: {
         y: -0.1,
         z: -0,

@@ -77,9 +77,9 @@ function mirrorObject({ name, rotation, position, size, orbit } = {}) {
   return frame;
 }
 
-function floorObject({ name, position } = {}) {
+function floorObject({ name, position, size } = {}) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const boxGeometry = new THREE.BoxBufferGeometry(15, 0.1, 15);
+  const boxGeometry = new THREE.BoxBufferGeometry(size, 0.1, size);
   const boxMaterial = new THREE.MeshPhongMaterial();
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
 
@@ -226,6 +226,36 @@ function lightObject({ name, position, color, type, intensity } = {}) {
   return [light, light.target, new THREE.CameraHelper(light.shadow.camera)];
 }
 
+function sphereObject({ position, name, isVideo, texture, size } = {}) {
+  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
+  let map;
+
+  if (isVideo) {
+    const video = document.createElement('video');
+
+    video.src = texture;
+    video.load();
+    video.play();
+
+    map = new THREE.VideoTexture(video);
+  } else {
+    map = textureLoader.load(texture);
+  }
+
+  const geometry = new THREE.SphereGeometry(size, 32, 32);
+  const material = new THREE.MeshBasicMaterial({
+    map,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  });
+  const sphere = new THREE.Mesh(geometry, material);
+
+  sphere.position.set(pos.x, pos.y, pos.z);
+  sphere.name = name;
+
+  return sphere;
+}
+
 export {
   mirrorObject,
   floorObject,
@@ -235,4 +265,5 @@ export {
   lightObject,
   torusObject,
   furnitureObject,
+  sphereObject,
 };
