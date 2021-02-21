@@ -94,6 +94,20 @@ function sceneHandler(iter) {
     .start();
 }
 
+function physicsHandler(list, cannonWorld) {
+  if (cannonWorld) cannonWorld.step(1 / 60);
+
+  Object.values(list).forEach(async (object) => {
+    if (object.physics) {
+      const obj = await object.obj;
+      const objPhysics = cannonWorld.bodies.find((el) => el.name === `${obj.name}-physics`);
+
+      obj.position.copy(objPhysics.position);
+      obj.quaternion.copy(objPhysics.quaternion);
+    }
+  });
+}
+
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -133,7 +147,10 @@ async function render() {
   if (avatar) {
     const head = scene.getObjectByName(avatars[guiState.threeControls.avatarIndex].headAnchor);
 
-    if (controls?.isPointerLockControls) {
+    if (
+      (renderer.xr.isPresenting && !guiState.appControl.posenetActive) ||
+      (controls?.isPointerLockControls && !guiState.appControl.posenetActive)
+    ) {
       camera.getWorldDirection(lookAtDirection);
 
       lookAtDirection.setY(lookAtDirection.y + 1.15);
@@ -160,16 +177,9 @@ async function render() {
       rightShoulder.rotation.z = 2.0155040367442623 + data.rightShoulder;
       rightArm.rotation.z = 0.795543826994568 + data.rightElbow;
     }
-
-    if (renderer.xr.isPresenting && !guiState.appControl.posenetActive) {
-      camera.getWorldDirection(lookAtDirection);
-
-      head.lookAt(lookAtDirection);
-    }
   }
 
   // Physics loop
-  // eslint-disable-next-line no-use-before-define
   physicsHandler(roomObjects, world);
 
   // Tween loop
@@ -181,20 +191,6 @@ async function render() {
 
 function animate() {
   renderer.setAnimationLoop(render);
-}
-
-function physicsHandler(list, cannonWorld) {
-  if (cannonWorld) cannonWorld.step(1 / 60);
-
-  Object.values(list).forEach(async (object) => {
-    if (object.physics) {
-      const obj = await object.obj;
-      const objPhysics = cannonWorld.bodies.find((el) => el.name === `${obj.name}-physics`);
-
-      obj.position.copy(objPhysics.position);
-      obj.quaternion.copy(objPhysics.quaternion);
-    }
-  });
 }
 
 function addBody({ url, name, position, scale, playAnimation, texture }) {
