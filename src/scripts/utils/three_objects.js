@@ -85,7 +85,7 @@ function floorObject({ name, position } = {}) {
 
   box.name = name;
   box.receiveShadow = true;
-  box.castShadow = true;
+  // box.castShadow = true;
   box.position.set(pos.x, pos.y, pos.z);
   // box.rotation.set(0, Math.PI / 3, 0);
 
@@ -106,22 +106,22 @@ function lookAtObject({ name, position }) {
 
 function furnitureObject({ name, position, rotation, texture, scale, lookAtAvatar }) {
   return new Promise((resolve) => {
-    let box;
+    let plane;
     const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
     const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
     const scl = scale || 1;
     const map = textureLoader.load(texture, (tex) => {
       // eslint-disable-next-line no-param-reassign
       tex.needsUpdate = true;
-      box.geometry = new THREE.PlaneGeometry(
+      plane.geometry = new THREE.PlaneGeometry(
         1.0 * scl,
         (map.image.height / map.image.width) * scl,
         1
       );
 
-      resolve(box);
+      resolve(plane);
     });
-    map.anisotropy = 16;
+    // map.anisotropy = 16;
 
     const geometry = new THREE.PlaneGeometry(1, 1, 1);
 
@@ -132,19 +132,19 @@ function furnitureObject({ name, position, rotation, texture, scale, lookAtAvata
       alphaTest: 0.5,
     });
 
-    box = new THREE.Mesh(geometry, material);
-    box.name = name;
-    box.receiveShadow = true;
-    box.castShadow = true;
-    box.customDepthMaterial = new THREE.MeshDepthMaterial({
+    plane = new THREE.Mesh(geometry, material);
+    plane.name = name;
+    plane.receiveShadow = true;
+    plane.castShadow = true;
+    plane.customDepthMaterial = new THREE.MeshDepthMaterial({
       depthPacking: THREE.RGBADepthPacking,
       map,
       alphaTest: 0.5,
     });
-    box.position.set(pos.x, pos.y, pos.z);
-    box.rotation.set(rot.x, rot.y, rot.z);
+    plane.position.set(pos.x, pos.y, pos.z);
+    plane.rotation.set(rot.x, rot.y, rot.z);
 
-    if (lookAtAvatar) box.lookAt(0, 0, 0);
+    if (lookAtAvatar) plane.lookAt(0, 0, 0);
   });
 }
 
@@ -167,6 +167,7 @@ function movingLightObject({ name, position, color, debug = false }) {
   parent.name = `${name}-parent`;
   light.position.set(pos.x, pos.y, pos.z);
   light.castShadow = true;
+  light.shadow.bias = -0.001;
 
   // defines point around which the object rotates
   pivotPoint.rotation.z = 0;
@@ -199,22 +200,27 @@ function lensflareObject() {
   return lensflare;
 }
 
-function lightObject({ name, position, color, debug = false }) {
+function lightObject({ name, position, color, type, intensity }) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const light = new THREE.DirectionalLight(color);
-  let helper;
+  let light = new THREE.DirectionalLight(color, intensity);
+
+  if (type === 'PointLight') {
+    light = new THREE.PointLight(color, intensity, 20);
+  }
 
   light.name = name;
   light.position.set(pos.x, pos.y, pos.z);
   light.castShadow = true;
+  light.shadow.bias = -0.001;
   // light.shadow.camera.zoom = 2;
-  // light.target.position.set(1, 10, -10);
 
-  if (debug) {
-    helper = new THREE.CameraHelper(light.shadow.camera);
+  if (type === 'PointLight') {
+    return [light, new THREE.CameraHelper(light.shadow.camera)];
   }
 
-  return [light, light.target, helper];
+  light.target.position.set(0, 0, 0);
+
+  return [light, light.target, new THREE.CameraHelper(light.shadow.camera)];
 }
 
 export {

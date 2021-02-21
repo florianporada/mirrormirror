@@ -81,6 +81,15 @@ ul {
   width: calc(640px / 2);
 }
 
+#board {
+  bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  font-size: 60px;
+  left: 15px;
+  position: absolute;
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg) scale(1);

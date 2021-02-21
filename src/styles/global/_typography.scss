@@ -18,9 +18,15 @@
   src: local('OrangeJuice'), url('fonts/orange-juice/orange-juice.ttf') format('TrueType');
 }
 
+@font-face {
+  font-family: 'GotHeroin';
+  font-style: normal;
+  src: local('GotHeroin'), url('fonts/GotHeroin/Got_Heroin.ttf') format('TrueType');
+}
+
 //! set font variables
 $font-heading: 'Libre-Baskerville-Reg', Fallback, 'Georgia', serif;
-$font-body: 'OrangeJuice';
+$font-body: 'GotHeroin';
 
 html {
   font-size: 62.5%; // 1rem = 10px, 3.5rem = 35px;

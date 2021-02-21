@@ -12,7 +12,7 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 
 import { setLoadingState } from './utils/helper';
 import { getCenterPoint, setThreeContext, toggleAxesHelper } from './utils/three_helper';
-import { skyboxes, avatars, scenes, roomObjects } from './utils/three_data';
+import { skyboxes, avatars, storyboard, roomObjects } from './utils/three_data';
 import { joints, initPoseNet, disposePoseNet } from './utils/posenet';
 import { lightObject, lookAtObject } from './utils/three_objects';
 
@@ -35,7 +35,7 @@ const guiState = {
 
 // Three
 const mixers = [];
-const sceneIterator = scenes.values();
+const storyboardIterator = storyboard.values();
 
 let camera;
 let sound;
@@ -43,7 +43,7 @@ let scene;
 let renderer;
 let clock;
 let controls;
-let currentScene = sceneIterator.next();
+let currentScene = storyboardIterator.next();
 
 // Cannon
 let world;
@@ -59,7 +59,14 @@ const objLoader = new OBJLoader();
 function sceneHandler(iter) {
   if (iter.done) return;
 
+  // const board = document.getElementById('board');
+  // const titleEl = board.getElementsByClassName('title')[0];
+  // const textEl = board.getElementsByClassName('text')[0];
+
   currentScene = iter.value;
+
+  // titleEl.textContent = currentScene.title;
+  // textEl.textContent = currentScene.text;
 
   const from = {
     x: camera.position.x,
@@ -82,6 +89,7 @@ function sceneHandler(iter) {
     })
     .onComplete(() => {
       controls.target.copy(scene.position);
+      if (typeof currentScene.cb === 'function') currentScene.cb();
     })
     .start();
 }
@@ -112,11 +120,11 @@ async function render() {
     controls.autoRotate = false;
   }
 
-  if (roomObjects.movienLight?.obj[0].name) {
-    const movienLight = roomObjects.movienLight.obj[0];
+  if (roomObjects.movingLight?.obj[0].name) {
+    const movingLight = roomObjects.movingLight.obj[0];
 
-    movienLight.rotation.y += 0.01;
-    movienLight.rotation.x = -Math.cos(delta) / 2;
+    movingLight.rotation.y += 0.01;
+    movingLight.rotation.x = -Math.cos(delta) / 2;
   }
 
   const lookAtPoint = scene.getObjectByName('lookAtPoint');
@@ -161,31 +169,8 @@ async function render() {
   }
 
   // Physics loop
-  if (world) world.step(1 / 60);
-
-  if (roomObjects.mirror.obj.name) {
-    const mirror = roomObjects.mirror.obj;
-    const mirrorPhysics = world.bodies.find((el) => el.name === `${mirror.name}-physics`);
-
-    mirror.position.copy(mirrorPhysics.position);
-    mirror.quaternion.copy(mirrorPhysics.quaternion);
-  }
-
-  const plant = await roomObjects.plant.obj;
-  if (plant.name) {
-    const plantPhysics = world.bodies.find((el) => el.name === `${plant.name}-physics`);
-
-    plant.position.copy(plantPhysics.position);
-    plant.quaternion.copy(plantPhysics.quaternion);
-  }
-
-  const lowboy = await roomObjects.lowboy.obj;
-  if (lowboy.name) {
-    const lowboyPhysics = world.bodies.find((el) => el.name === `${lowboy.name}-physics`);
-
-    lowboy.position.copy(lowboyPhysics.position);
-    lowboy.quaternion.copy(lowboyPhysics.quaternion);
-  }
+  // eslint-disable-next-line no-use-before-define
+  physicsHandler(roomObjects, world);
 
   // Tween loop
   TWEEN.update();
@@ -196,6 +181,20 @@ async function render() {
 
 function animate() {
   renderer.setAnimationLoop(render);
+}
+
+function physicsHandler(list, cannonWorld) {
+  if (cannonWorld) cannonWorld.step(1 / 60);
+
+  Object.values(list).forEach(async (object) => {
+    if (object.physics) {
+      const obj = await object.obj;
+      const objPhysics = cannonWorld.bodies.find((el) => el.name === `${obj.name}-physics`);
+
+      obj.position.copy(objPhysics.position);
+      obj.quaternion.copy(objPhysics.quaternion);
+    }
+  });
 }
 
 function addBody({ url, name, position, scale, playAnimation, texture }) {
@@ -338,7 +337,7 @@ function firstPerson() {
   controls.isPointerLockControls = true;
   controls.lock();
 
-  camera.position.set(0, 1.600000023841858, 0.1);
+  camera.position.set(0, 1.65, 0.1);
   camera.lookAt(getCenterPoint(mirror));
 
   controls.addEventListener('lock', () => {
@@ -346,7 +345,7 @@ function firstPerson() {
   });
 
   controls.addEventListener('unlock', () => {
-    thirdPerson();
+    // thirdPerson();
   });
 }
 
@@ -400,15 +399,16 @@ function switchSkyBox(idx) {
   scene.background = bg;
 }
 
-window.debug = function debug(state) {
+function debugView(state) {
   toggleAxesHelper();
+  cannonDebugger(scene, world.bodies);
 
   globalDebug = state;
-};
+}
 
 function initCannon() {
   world = new CANNON.World();
-  world.gravity.set(0, -19.82, 0); // m/s²
+  world.gravity.set(0, -9.82, 0); // m/s²
   world.broadphase = new CANNON.NaiveBroadphase();
 
   // Tweak contact properties.
@@ -424,12 +424,11 @@ function initCannon() {
   world.solver = new CANNON.SplitSolver(solver);
   // use this to test non-split solver
   // world.solver = solver
-
-  cannonDebugger(scene, world.bodies);
 }
 
 async function initObjects(list) {
   Object.keys(list).forEach(async (key) => {
+    if (list[key].disable) return;
     const objects = !Array.isArray(list[key].obj) ? [list[key].obj] : list[key].obj;
 
     for (let index = 0; index < objects.length; index += 1) {
@@ -449,7 +448,7 @@ async function initObjects(list) {
         );
 
         const physicBody = new CANNON.Body({
-          mass: element.name === 'floor' ? 0 : 5,
+          mass: list[key].gravity ? 5 : 0,
           position: physicBodyPosition, // m
           shape: new CANNON.Box(physicBodySize),
           quaternion: physicBodyQuat,
@@ -460,7 +459,7 @@ async function initObjects(list) {
         world.addBody(physicBody);
       }
 
-      if (element && !list[key].disable) {
+      if (element) {
         scene.add(element);
       }
     }
@@ -487,20 +486,28 @@ function init() {
   addAmbientSound();
 
   // Lights
-  const [light1] = lightObject({
+  const [light1, lightTarget] = lightObject({
     name: 'light1',
-    position: { x: 1, y: 5.5, z: -0.5 },
+    position: { x: 15.5, y: 17.8, z: 1.7 },
     color: 0xfbf1e6, // #fbf1e6
+    intensity: 1.1,
   });
-  // const [light2] = lightObject({
-  //   name: 'light2',
-  //   position: { x: 1, y: 5.5, z: -4.5 },
-  //   color: 0xfbf116, // #fbf116
-  // });
-  const light = new THREE.AmbientLight(0x404040); // soft white light
-  scene.add(light);
 
   scene.add(light1);
+  scene.add(lightTarget);
+
+  const [light2] = lightObject({
+    name: 'light2',
+    position: { x: 1, y: 2, z: 1 },
+    color: 0xfbf1e6, // #fff186
+    type: 'PointLight',
+    intensity: 0.3,
+  });
+  scene.add(light2);
+
+  const light = new THREE.AmbientLight(0x404040); // soft white light
+
+  scene.add(light);
 
   // Avatar
   addBody({
@@ -544,6 +551,9 @@ function init() {
   // Init first scene
   sceneHandler(currentScene);
 
+  // Add console debug
+  window.debugView = debugView;
+
   // Resize
   window.addEventListener('resize', onWindowResize, false);
 }
@@ -564,7 +574,7 @@ function addThreeControls() {
   threeControl.add(
     {
       next: () => {
-        const current = sceneIterator.next();
+        const current = storyboardIterator.next();
         sceneHandler(current);
       },
     },
@@ -580,9 +590,9 @@ function addThreeControls() {
   );
   threeControl.add(
     {
-      axes: toggleAxesHelper,
+      debugView,
     },
-    'axes'
+    'debugView'
   );
   const threeControlSound = threeControl.add(guiState.threeControls, 'sound');
   const threeControlView = threeControl.add(guiState.threeControls, 'view', [
@@ -624,6 +634,8 @@ function addThreeControls() {
   threeControlVideoRoom.onChange(() => {
     toggleVideoSphere(scene);
   });
+
+  gui.close();
 }
 
 init();
