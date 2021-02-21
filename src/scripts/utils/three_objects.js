@@ -5,7 +5,7 @@ import { Lensflare, LensflareElement } from 'three/examples/jsm/objects/Lensflar
 
 const textureLoader = new THREE.TextureLoader();
 
-function torusObject({ name, position }) {
+function torusObject({ name, position } = {}) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
 
   const torusGeometry = new THREE.TorusKnotBufferGeometry(0.4, 0.15, 150, 20);
@@ -23,7 +23,7 @@ function torusObject({ name, position }) {
   return torus;
 }
 
-function mirrorObject({ name, rotation, position, size, orbit }) {
+function mirrorObject({ name, rotation, position, size, orbit } = {}) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
   const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
   const mirrorSize = { ...{ x: 2.4, y: 4.4 }, ...size };
@@ -92,7 +92,7 @@ function floorObject({ name, position } = {}) {
   return box;
 }
 
-function lookAtObject({ name, position }) {
+function lookAtObject({ name, position } = {}) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
   const geometry = new THREE.SphereGeometry(0.02, 32, 32);
   const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -104,7 +104,7 @@ function lookAtObject({ name, position }) {
   return sphere;
 }
 
-function furnitureObject({ name, position, rotation, texture, scale, lookAtAvatar }) {
+function furnitureObject({ name, position, rotation, texture, scale, lookAtAvatar } = {}) {
   return new Promise((resolve) => {
     let plane;
     const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
@@ -148,7 +148,7 @@ function furnitureObject({ name, position, rotation, texture, scale, lookAtAvata
   });
 }
 
-function movingLightObject({ name, position, color, debug = false }) {
+function movingLightObject({ name, position, color, debug = false } = {}) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
 
   const light = new THREE.PointLight(color, 10, 10);
@@ -185,12 +185,15 @@ function movingLightObject({ name, position, color, debug = false }) {
   return [parent, helper];
 }
 
-function lensflareObject() {
+function lensflareObject({ position, name } = {}) {
+  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
+
   const lensflare = new Lensflare();
   const texture0 = textureLoader.load('assets/textures/lensflare/lensflare0.png');
   const texture3 = textureLoader.load('assets/textures/lensflare/lensflare3.png');
 
-  lensflare.position.set(0, 5, -5);
+  lensflare.position.set(pos.x, pos.y, pos.z);
+  lensflare.name = name;
   lensflare.addElement(new LensflareElement(texture0, 700, 0));
   lensflare.addElement(new LensflareElement(texture3, 60, 0.6));
   lensflare.addElement(new LensflareElement(texture3, 70, 0.7));
@@ -200,7 +203,7 @@ function lensflareObject() {
   return lensflare;
 }
 
-function lightObject({ name, position, color, type, intensity }) {
+function lightObject({ name, position, color, type, intensity } = {}) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
   let light = new THREE.DirectionalLight(color, intensity);
 

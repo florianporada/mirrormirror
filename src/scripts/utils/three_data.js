@@ -125,7 +125,10 @@ const roomObjects = {
       color: 0xffbb72, // #fff1cf
     }),
   },
-  lensflare: { disable: false, obj: lensflareObject() },
+  lensflare: {
+    disable: false,
+    obj: lensflareObject({ name: 'lensflare', position: { x: 8, y: 9, z: 9 } }),
+  },
   floor: {
     disable: false,
     physics: true,
