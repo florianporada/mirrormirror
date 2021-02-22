@@ -255,16 +255,22 @@ function sphereObject({ position, name, isVideo, texture, size } = {}) {
 
 function textObject({ position, text, rotation, name, scale }) {
   const textArray = text.split(' ');
+  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
+  const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
+  const scl = scale || 1;
+  const parent = new THREE.Object3D();
+
+  parent.name = name || createID();
+  parent.position.set(pos.x, pos.y, pos.z);
+  parent.rotation.set(rot.x, rot.y + THREE.MathUtils.degToRad(180), rot.z);
+
   let offsetX = 0;
   let offsetY = 0;
+
   const promises = textArray.map((word, index) => {
     const textureUrl = `/assets/textures/words/${word.trim()}.png`;
 
     return new Promise((resolve) => {
-      const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-      const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
-      const scl = scale || 1;
-
       textureLoader.load(textureUrl, (tex) => {
         // eslint-disable-next-line no-param-reassign
         tex.needsUpdate = true;
@@ -280,17 +286,16 @@ function textObject({ position, text, rotation, name, scale }) {
         });
         const plane = new THREE.Mesh(planeGeometry, planeMaterial);
 
-        plane.position.setZ(0.055);
+        plane.position.setZ(-0.055);
+        plane.rotateY(THREE.MathUtils.degToRad(180));
 
         const frameGeometry = new THREE.BoxBufferGeometry(width, height, 0.1);
-        const frameMaterial = new THREE.MeshBasicMaterial({ color: 0xfcfcfc });
+        const frameMaterial = new THREE.MeshBasicMaterial({ color: 0xf1f1f1 });
         const frame = new THREE.Mesh(frameGeometry, frameMaterial);
 
-        frame.name = name || createID();
         frame.receiveShadow = true;
         frame.castShadow = true;
-        frame.position.set(pos.x - offsetX, pos.y - offsetY, pos.z);
-        frame.rotation.set(rot.x, rot.y + THREE.MathUtils.degToRad(180), rot.z);
+        frame.position.set(-offsetX, -offsetY, 0);
 
         frame.add(plane);
 
@@ -306,7 +311,13 @@ function textObject({ position, text, rotation, name, scale }) {
     });
   });
 
-  return Promise.all(promises);
+  return new Promise((resolve) => {
+    Promise.all(promises).then((data) => {
+      data.forEach((el) => parent.add(el));
+
+      resolve(parent);
+    });
+  });
 }
 
 export {

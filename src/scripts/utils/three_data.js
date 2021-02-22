@@ -74,14 +74,15 @@ const skyboxes = [
 
 const storyboard = [
   {
-    cameraPosition: new THREE.Vector3(29.2, 15.65, 24.95),
+    cameraPosition: new THREE.Vector3(35.98, 17.06, 22.92),
     title: '#1',
     text: 'do do do exclamationmark',
     textRotation: {
       x: THREE.MathUtils.radToDeg(0),
-      // y: THREE.MathUtils.radToDeg(40),
+      y: THREE.MathUtils.radToDeg(-150),
       z: THREE.MathUtils.radToDeg(0),
     },
+    textPosition: new THREE.Vector3(29.2, 15.65, 20.95),
     options: {
       rotate: false,
     },

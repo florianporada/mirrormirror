@@ -43,7 +43,7 @@ let scene;
 let renderer;
 let clock;
 let controls;
-let currentScene = storyboardIterator.next();
+let currentStory = storyboardIterator.next();
 
 // Cannon
 let world;
@@ -56,30 +56,19 @@ const objLoader = new OBJLoader();
 //   .setPath('/assets/textures/cube/')
 //   .load(skyboxes[0]);
 
-function sceneHandler(iter) {
+function storyboardHandler(iter) {
   if (iter.done) return;
 
-  currentScene = iter.value;
+  currentStory = iter.value;
 
   textObject({
-    position: {
-      x: currentScene.cameraPosition.x,
-      y: currentScene.cameraPosition.y,
-      z: currentScene.cameraPosition.z,
-    },
-    rotation: currentScene.textRotation,
-    text: currentScene.text,
+    position: currentStory.textPosition,
+    rotation: currentStory.textRotation,
+    text: currentStory.text,
     name: 'q1',
     scale: 2,
   }).then((data) => {
-    const parent = new THREE.Object3D();
-    parent.position.copy(data[0]);
-
-    data.forEach((el) => parent.add(el));
-
-    // parent.rotation.set(0, THREE.MathUtils.degToRad(90), 0);
-
-    scene.add(parent);
+    scene.add(data);
   });
 
   const from = {
@@ -89,9 +78,9 @@ function sceneHandler(iter) {
   };
 
   const to = {
-    x: currentScene.cameraPosition.x,
-    y: currentScene.cameraPosition.y,
-    z: currentScene.cameraPosition.z,
+    x: currentStory.cameraPosition.x,
+    y: currentStory.cameraPosition.y,
+    z: currentStory.cameraPosition.z,
   };
 
   new TWEEN.Tween(from)
@@ -103,7 +92,7 @@ function sceneHandler(iter) {
     })
     .onComplete(() => {
       controls.target.copy(scene.position);
-      if (typeof currentScene.cb === 'function') currentScene.cb();
+      if (typeof currentStory.cb === 'function') currentStory.cb();
     })
     .start();
 }
@@ -142,7 +131,7 @@ async function render() {
   });
 
   // Scene Config
-  if (currentScene.options.rotate) {
+  if (currentStory.options.rotate) {
     controls.autoRotate = true;
   } else {
     controls.autoRotate = false;
@@ -543,7 +532,7 @@ function init() {
   });
 
   // Init first scene
-  sceneHandler(currentScene);
+  storyboardHandler(currentStory);
 
   // Add console debug
   window.debugView = debugView;
@@ -569,7 +558,7 @@ function addThreeControls() {
     {
       next: () => {
         const current = storyboardIterator.next();
-        sceneHandler(current);
+        storyboardHandler(current);
       },
     },
     'next'
