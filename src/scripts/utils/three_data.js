@@ -74,9 +74,14 @@ const skyboxes = [
 
 const storyboard = [
   {
-    cameraPosition: new THREE.Vector3(4, 15, -2),
+    cameraPosition: new THREE.Vector3(29.2, 15.65, 24.95),
     title: '#1',
-    text: 'Why do You want to identify with an avatar?',
+    text: 'do do do exclamationmark',
+    textRotation: {
+      x: THREE.MathUtils.radToDeg(0),
+      // y: THREE.MathUtils.radToDeg(40),
+      z: THREE.MathUtils.radToDeg(0),
+    },
     options: {
       rotate: false,
     },
@@ -84,7 +89,7 @@ const storyboard = [
   {
     cameraPosition: new THREE.Vector3(-5, 3, 13),
     title: '#2',
-    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+    text: 'why do you want to identify with your avatar questionmark',
     options: {
       rotate: false,
     },
@@ -92,7 +97,7 @@ const storyboard = [
   {
     cameraPosition: new THREE.Vector3(2, 3, 3),
     title: '#3',
-    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+    text: 'how do you identify with your avatar questionmark',
     options: {
       rotate: false,
     },
@@ -100,17 +105,9 @@ const storyboard = [
   {
     cameraPosition: new THREE.Vector3(1, 23, 3),
     title: '#4',
-    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
+    text: 'what connects you with your digital self questionmark',
     options: {
       rotate: false,
-    },
-  },
-  {
-    cameraPosition: new THREE.Vector3(51, 4, 3),
-    title: '#5',
-    text: 'Commodo vivamus penatibus sociis senectus vel auctor',
-    options: {
-      rotate: true,
     },
   },
 ];

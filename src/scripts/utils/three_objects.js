@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import { Reflector } from 'three/examples/jsm/objects/Reflector';
 import { Lensflare, LensflareElement } from 'three/examples/jsm/objects/Lensflare';
+import { createID } from './helper';
 
 const textureLoader = new THREE.TextureLoader();
 
@@ -106,45 +107,41 @@ function lookAtObject({ name, position } = {}) {
 
 function furnitureObject({ name, position, rotation, texture, scale, lookAtAvatar } = {}) {
   return new Promise((resolve) => {
-    let plane;
     const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
     const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
     const scl = scale || 1;
-    const map = textureLoader.load(texture, (tex) => {
+    textureLoader.load(texture, (tex) => {
       // eslint-disable-next-line no-param-reassign
       tex.needsUpdate = true;
-      plane.geometry = new THREE.PlaneGeometry(
+
+      const geometry = new THREE.PlaneGeometry(
         1.0 * scl,
-        (map.image.height / map.image.width) * scl,
+        (tex.image.height / tex.image.width) * scl,
         1
       );
+      const material = new THREE.MeshLambertMaterial({
+        transparent: false,
+        map: tex,
+        side: THREE.DoubleSide,
+        alphaTest: 0.5,
+      });
+      const plane = new THREE.Mesh(geometry, material);
+      plane.name = name;
+      plane.receiveShadow = true;
+      plane.castShadow = true;
+      plane.customDepthMaterial = new THREE.MeshDepthMaterial({
+        depthPacking: THREE.RGBADepthPacking,
+        map: tex,
+        alphaTest: 0.5,
+      });
+      plane.position.set(pos.x, pos.y, pos.z);
+      plane.rotation.set(rot.x, rot.y, rot.z);
+
+      if (lookAtAvatar) plane.lookAt(0, 0, 0);
 
       resolve(plane);
     });
     // map.anisotropy = 16;
-
-    const geometry = new THREE.PlaneGeometry(1, 1, 1);
-
-    const material = new THREE.MeshLambertMaterial({
-      transparent: false,
-      map,
-      side: THREE.DoubleSide,
-      alphaTest: 0.5,
-    });
-
-    plane = new THREE.Mesh(geometry, material);
-    plane.name = name;
-    plane.receiveShadow = true;
-    plane.castShadow = true;
-    plane.customDepthMaterial = new THREE.MeshDepthMaterial({
-      depthPacking: THREE.RGBADepthPacking,
-      map,
-      alphaTest: 0.5,
-    });
-    plane.position.set(pos.x, pos.y, pos.z);
-    plane.rotation.set(rot.x, rot.y, rot.z);
-
-    if (lookAtAvatar) plane.lookAt(0, 0, 0);
   });
 }
 
@@ -256,6 +253,62 @@ function sphereObject({ position, name, isVideo, texture, size } = {}) {
   return sphere;
 }
 
+function textObject({ position, text, rotation, name, scale }) {
+  const textArray = text.split(' ');
+  let offsetX = 0;
+  let offsetY = 0;
+  const promises = textArray.map((word, index) => {
+    const textureUrl = `/assets/textures/words/${word.trim()}.png`;
+
+    return new Promise((resolve) => {
+      const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
+      const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
+      const scl = scale || 1;
+
+      textureLoader.load(textureUrl, (tex) => {
+        // eslint-disable-next-line no-param-reassign
+        tex.needsUpdate = true;
+
+        const width = 1.0 * scl;
+        const height = (tex.image.height / tex.image.width) * scl;
+        const planeGeometry = new THREE.PlaneGeometry(width, height, 1);
+        const planeMaterial = new THREE.MeshLambertMaterial({
+          transparent: false,
+          map: tex,
+          side: THREE.DoubleSide,
+          alphaTest: 0.5,
+        });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+        plane.position.setZ(0.055);
+
+        const frameGeometry = new THREE.BoxBufferGeometry(width, height, 0.1);
+        const frameMaterial = new THREE.MeshBasicMaterial({ color: 0xfcfcfc });
+        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+
+        frame.name = name || createID();
+        frame.receiveShadow = true;
+        frame.castShadow = true;
+        frame.position.set(pos.x - offsetX, pos.y - offsetY, pos.z);
+        frame.rotation.set(rot.x, rot.y + THREE.MathUtils.degToRad(180), rot.z);
+
+        frame.add(plane);
+
+        offsetX += width + 0.05;
+
+        if (index % 3 === 3 - 1) {
+          offsetY += height + 0.05;
+          offsetX = 0;
+        }
+
+        resolve(frame);
+      });
+    });
+  });
+
+  return Promise.all(promises);
+}
+
 export {
   mirrorObject,
   floorObject,
@@ -266,4 +319,5 @@ export {
   torusObject,
   furnitureObject,
   sphereObject,
+  textObject,
 };

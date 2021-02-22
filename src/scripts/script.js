@@ -14,7 +14,7 @@ import { setLoadingState } from './utils/helper';
 import { getCenterPoint, setThreeContext, toggleAxesHelper } from './utils/three_helper';
 import { skyboxes, avatars, storyboard, roomObjects } from './utils/three_data';
 import { joints, initPoseNet, disposePoseNet } from './utils/posenet';
-import { lightObject, lookAtObject, sphereObject } from './utils/three_objects';
+import { lightObject, lookAtObject, sphereObject, textObject } from './utils/three_objects';
 
 // Global config
 let globalDebug = false;
@@ -59,14 +59,28 @@ const objLoader = new OBJLoader();
 function sceneHandler(iter) {
   if (iter.done) return;
 
-  // const board = document.getElementById('board');
-  // const titleEl = board.getElementsByClassName('title')[0];
-  // const textEl = board.getElementsByClassName('text')[0];
-
   currentScene = iter.value;
 
-  // titleEl.textContent = currentScene.title;
-  // textEl.textContent = currentScene.text;
+  textObject({
+    position: {
+      x: currentScene.cameraPosition.x,
+      y: currentScene.cameraPosition.y,
+      z: currentScene.cameraPosition.z,
+    },
+    rotation: currentScene.textRotation,
+    text: currentScene.text,
+    name: 'q1',
+    scale: 2,
+  }).then((data) => {
+    const parent = new THREE.Object3D();
+    parent.position.copy(data[0]);
+
+    data.forEach((el) => parent.add(el));
+
+    // parent.rotation.set(0, THREE.MathUtils.degToRad(90), 0);
+
+    scene.add(parent);
+  });
 
   const from = {
     x: camera.position.x,
@@ -570,6 +584,14 @@ function addThreeControls() {
   );
   threeControl.add(
     {
+      'Look at text': () => {
+        controls.target = new THREE.Vector3(0, 2, 1);
+      },
+    },
+    'Look at text'
+  );
+  threeControl.add(
+    {
       debugView,
     },
     'debugView'
@@ -579,6 +601,12 @@ function addThreeControls() {
       'World Sphere': toggleSphere,
     },
     'World Sphere'
+  );
+  threeControl.add(
+    {
+      'Camera Position': () => console.log(camera.position),
+    },
+    'Camera Position'
   );
   const threeControlSound = threeControl.add(guiState.threeControls, 'sound');
   const threeControlView = threeControl.add(guiState.threeControls, 'view', [
