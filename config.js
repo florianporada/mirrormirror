@@ -1,9 +1,9 @@
 module.exports = {
   FaviconsWebpackPlugin: {
-    logo: './src/images/favicon.svg',
+    logo: './src/images/loading-spinner.png',
     favicons: {
-      appName: 'MirrorMirror',
-      appDescription: 'VR inner body experience',
+      appName: 'Mirror Mirror',
+      appDescription: 'An empathy machine for your digital self',
       developerName: 'florianporada',
       developerURL: null, // prevent retrieving from the nearest package.json
       background: '#eeeeee',
