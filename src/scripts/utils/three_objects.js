@@ -253,7 +253,7 @@ function sphereObject({ position, name, isVideo, texture, size } = {}) {
   return sphere;
 }
 
-function textObject({ position, text, rotation, name, scale }) {
+async function textObject({ position, text, rotation, name, scale, addLight }) {
   const textArray = text.split(' ');
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
   const rot = { ...{ x: 0, y: 0, z: 0 }, ...rotation };
@@ -264,19 +264,24 @@ function textObject({ position, text, rotation, name, scale }) {
   parent.position.set(pos.x, pos.y, pos.z);
   parent.rotation.set(rot.x, rot.y + THREE.MathUtils.degToRad(180), rot.z);
 
+  if (addLight) {
+    const light = new THREE.PointLight(0xfbf1e6, 1);
+
+    light.position.set(0, 2, -2);
+    parent.add(light);
+  }
+
   let offsetX = 0;
   let offsetY = 0;
 
-  const promises = textArray.map((word, index) => {
-    const textureUrl = `/assets/textures/words/${word.trim()}.png`;
-
+  function loadObject(texture, word, index) {
     return new Promise((resolve) => {
-      textureLoader.load(textureUrl, (tex) => {
+      textureLoader.load(texture, (tex) => {
         // eslint-disable-next-line no-param-reassign
         tex.needsUpdate = true;
 
-        const width = 1.0 * scl;
-        const height = (tex.image.height / tex.image.width) * scl;
+        const width = (tex.image.width / tex.image.height) * scl;
+        const height = 1.0 * scl;
         const planeGeometry = new THREE.PlaneGeometry(width, height, 1);
         const planeMaterial = new THREE.MeshLambertMaterial({
           transparent: false,
@@ -293,10 +298,10 @@ function textObject({ position, text, rotation, name, scale }) {
         const frameMaterial = new THREE.MeshBasicMaterial({ color: 0xf1f1f1 });
         const frame = new THREE.Mesh(frameGeometry, frameMaterial);
 
+        frame.name = word;
         frame.receiveShadow = true;
         frame.castShadow = true;
         frame.position.set(-offsetX, -offsetY, 0);
-
         frame.add(plane);
 
         offsetX += width + 0.05;
@@ -309,15 +314,19 @@ function textObject({ position, text, rotation, name, scale }) {
         resolve(frame);
       });
     });
-  });
+  }
 
-  return new Promise((resolve) => {
-    Promise.all(promises).then((data) => {
-      data.forEach((el) => parent.add(el));
+  for (let index = 0; index < textArray.length; index += 1) {
+    const word = textArray[index];
+    const textureUrl = `/assets/textures/words/${word.trim()}.png`;
 
-      resolve(parent);
-    });
-  });
+    // eslint-disable-next-line no-await-in-loop
+    const txt = await loadObject(textureUrl, word, index);
+
+    parent.add(txt);
+  }
+
+  return parent;
 }
 
 export {

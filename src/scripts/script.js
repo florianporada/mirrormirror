@@ -59,15 +59,21 @@ const objLoader = new OBJLoader();
 function storyboardHandler(iter) {
   if (iter.done) return;
 
+  console.log(iter);
+
   currentStory = iter.value;
+
+  scene.remove(scene.getObjectByName(`question${currentStory.title}`));
 
   textObject({
     position: currentStory.textPosition,
     rotation: currentStory.textRotation,
     text: currentStory.text,
-    name: 'q1',
-    scale: 2,
+    name: `question${currentStory.title}`,
+    scale: 1,
+    addLight: false,
   }).then((data) => {
+    console.log(data);
     scene.add(data);
   });
 
@@ -95,6 +101,18 @@ function storyboardHandler(iter) {
       if (typeof currentStory.cb === 'function') currentStory.cb();
     })
     .start();
+}
+
+function userControls() {
+  // const controls = document.getElementById('usercontrols');
+  const next = document.getElementById('next');
+
+  next.onclick = (e) => {
+    e.preventDefault();
+
+    const current = storyboardIterator.next();
+    storyboardHandler(current);
+  };
 }
 
 function physicsHandler(list, cannonWorld) {
@@ -533,6 +551,9 @@ function init() {
 
   // Init first scene
   storyboardHandler(currentStory);
+
+  // Init user controls
+  userControls();
 
   // Add console debug
   window.debugView = debugView;

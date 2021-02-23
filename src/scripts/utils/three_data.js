@@ -76,7 +76,7 @@ const storyboard = [
   {
     cameraPosition: new THREE.Vector3(35.98, 17.06, 22.92),
     title: '#1',
-    text: 'do do do exclamationmark',
+    text: 'what do you do questionmark exclamationmark',
     textRotation: {
       x: THREE.MathUtils.radToDeg(0),
       y: THREE.MathUtils.radToDeg(-150),
@@ -91,6 +91,12 @@ const storyboard = [
     cameraPosition: new THREE.Vector3(-5, 3, 13),
     title: '#2',
     text: 'why do you want to identify with your avatar questionmark',
+    textRotation: {
+      x: THREE.MathUtils.radToDeg(0),
+      y: THREE.MathUtils.radToDeg(-150),
+      z: THREE.MathUtils.radToDeg(0),
+    },
+    textPosition: new THREE.Vector3(-5, 3, 13),
     options: {
       rotate: false,
     },
@@ -98,7 +104,13 @@ const storyboard = [
   {
     cameraPosition: new THREE.Vector3(2, 3, 3),
     title: '#3',
-    text: 'how do you identify with your avatar questionmark',
+    text: 'how do you identify with your digital body questionmark',
+    textRotation: {
+      x: THREE.MathUtils.radToDeg(0),
+      y: THREE.MathUtils.radToDeg(-150),
+      z: THREE.MathUtils.radToDeg(0),
+    },
+    textPosition: new THREE.Vector3(2, 3, 3),
     options: {
       rotate: false,
     },
@@ -107,6 +119,12 @@ const storyboard = [
     cameraPosition: new THREE.Vector3(1, 23, 3),
     title: '#4',
     text: 'what connects you with your digital self questionmark',
+    textRotation: {
+      x: THREE.MathUtils.radToDeg(0),
+      y: THREE.MathUtils.radToDeg(-150),
+      z: THREE.MathUtils.radToDeg(0),
+    },
+    textPosition: new THREE.Vector3(1, 23, 3),
     options: {
       rotate: false,
     },
@@ -124,7 +142,7 @@ const roomObjects = {
     }),
   },
   lensflare: {
-    disable: false,
+    disable: true,
     obj: lensflareObject({ name: 'lensflare', position: { x: 8, y: 9, z: 9 } }),
   },
   floor: {
@@ -132,7 +150,7 @@ const roomObjects = {
     physics: true,
     obj: floorObject({
       name: 'floor',
-      size: 30,
+      size: 15,
       position: {
         y: -0.1,
         z: -0,
@@ -261,7 +279,7 @@ const roomObjects = {
     physics: true,
     obj: furnitureObject({
       name: 'painting',
-      position: { x: 4, y: 1, z: 0.64 },
+      position: { x: 4, y: 1.3, z: 0.64 },
       texture: '/assets/textures/room_assets/painting.png',
       scale: 1.7,
       rotation: { y: THREE.MathUtils.degToRad(63), x: THREE.MathUtils.degToRad(11) },

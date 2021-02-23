@@ -32,12 +32,15 @@
   <body>
     <div id="loading">
       <div class="loading-text"><span class="loading-message"></span></div>
-      <img class="loading-spinner" src="images/loading.png" alt="loading spinner" />
+      <img class="loading-spinner" src="images/loading-spinner.png" alt="loading spinner" />
+      <img class="loading-info" src="images/loading-text.png" alt="loading text" />
     </div>
     <div id="main" style="display: none">
-      <div id="board">
-        <span class="title"></span>
-        <span class="text"></span>
+      <div id="usercontrols">
+        <a id="next" href="#">
+          <!-- <img src="images/next.png" alt="next button" /> -->
+          <span>Next</span>
+        </a>
       </div>
       <video id="video" playsinline style="display: none"></video>
       <canvas id="output" />
