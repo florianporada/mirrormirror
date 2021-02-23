@@ -10,11 +10,12 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
-import { setLoadingState } from './utils/helper';
+import { addPosenetButton, setLoadingState } from './utils/helper';
 import { getCenterPoint, setThreeContext, toggleAxesHelper } from './utils/three_helper';
 import { skyboxes, avatars, storyboard, roomObjects } from './utils/three_data';
 import { joints, initPoseNet, disposePoseNet } from './utils/posenet';
 import { lightObject, lookAtObject, sphereObject, textObject } from './utils/three_objects';
+import { isMobile } from './utils/demo_util';
 
 // Global config
 let globalDebug = false;
@@ -56,56 +57,152 @@ const objLoader = new OBJLoader();
 //   .setPath('/assets/textures/cube/')
 //   .load(skyboxes[0]);
 
-function storyboardHandler(iter) {
-  if (iter.done) return;
+function thirdPerson() {
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.update();
 
-  console.log(iter);
+  camera.position.set(-3.609879835590135, 2.572977063101824, -4.954594089199559);
+  camera.lookAt(0, 0, 0);
+}
+
+function firstPerson() {
+  const mirror = scene.getObjectByName('mirror');
+  const button = document.getElementById('next');
+
+  controls = new PointerLockControls(camera, document.body);
+
+  controls.isPointerLockControls = true;
+  controls.lock();
+
+  camera.position.set(0, 1.65, 0.1);
+  camera.lookAt(getCenterPoint(mirror));
+
+  controls.addEventListener('lock', () => {
+    button.textContent = 'Press ESC';
+    addPosenetButton(() => {
+      initPoseNet();
+    });
+  });
+
+  controls.addEventListener('unlock', () => {
+    button.textContent = 'Go inside';
+
+    addPosenetButton(() => {
+      initPoseNet();
+    });
+    thirdPerson();
+  });
+}
+
+function storyboardHandler(iter) {
+  if (iter.done) {
+    // controls.enablePan = true;
+    controls.enableZoom = true;
+
+    const usercontrols = document.getElementById('usercontrols');
+    const button = document.getElementById('next');
+
+    if (isMobile()) {
+      usercontrols.appendChild(VRButton.createButton(renderer));
+
+      button.textContent = '';
+      button.onclick = (e) => {
+        e.preventDefault();
+      };
+    } else {
+      button.textContent = 'Go inside';
+      button.onclick = (e) => {
+        e.preventDefault();
+
+        firstPerson();
+      };
+    }
+
+    const from = {
+      x: camera.position.x,
+      y: camera.position.y,
+      z: camera.position.z,
+    };
+
+    const to = {
+      x: 0,
+      y: 1.6,
+      z: 0,
+    };
+
+    new TWEEN.Tween(from)
+      .to(to, 1000)
+      .easing(TWEEN.Easing.Quadratic.InOut)
+      .onUpdate((d) => {
+        camera.position.set(d.x, d.y, d.z);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+      })
+      .onComplete(() => {
+        firstPerson();
+      })
+      .start();
+
+    return;
+  }
 
   currentStory = iter.value;
 
-  scene.remove(scene.getObjectByName(`question${currentStory.title}`));
+  controls.enablePan = false;
+  // controls.enableZoom = false;
+
+  function moveCamera(start, end) {
+    new TWEEN.Tween(start)
+      .to(end, 3000)
+      .easing(TWEEN.Easing.Quadratic.InOut)
+      .onUpdate((d) => {
+        camera.position.set(d.x, d.y, d.z);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+      })
+      .onComplete(() => {
+        controls.target.copy(scene.position);
+        if (typeof currentStory.cb === 'function') currentStory.cb();
+      })
+      .start();
+  }
 
   textObject({
     position: currentStory.textPosition,
     rotation: currentStory.textRotation,
     text: currentStory.text,
-    name: `question${currentStory.title}`,
+    name: currentStory.title,
     scale: 1,
-    addLight: false,
+    addLight: true,
   }).then((data) => {
-    console.log(data);
     scene.add(data);
+
+    const from = {
+      x: camera.position.x,
+      y: camera.position.y,
+      z: camera.position.z,
+    };
+
+    const to = {
+      x: currentStory.cameraPosition.x,
+      y: currentStory.cameraPosition.y,
+      z: currentStory.cameraPosition.z,
+    };
+
+    setTimeout(() => {
+      moveCamera(from, to);
+    }, 1000);
   });
-
-  const from = {
-    x: camera.position.x,
-    y: camera.position.y,
-    z: camera.position.z,
-  };
-
-  const to = {
-    x: currentStory.cameraPosition.x,
-    y: currentStory.cameraPosition.y,
-    z: currentStory.cameraPosition.z,
-  };
-
-  new TWEEN.Tween(from)
-    .to(to, 600)
-    .easing(TWEEN.Easing.Quadratic.InOut)
-    .onUpdate((d) => {
-      camera.position.set(d.x, d.y, d.z);
-      camera.lookAt(new THREE.Vector3(0, 0, 0));
-    })
-    .onComplete(() => {
-      controls.target.copy(scene.position);
-      if (typeof currentStory.cb === 'function') currentStory.cb();
-    })
-    .start();
 }
 
 function userControls() {
-  // const controls = document.getElementById('usercontrols');
-  const next = document.getElementById('next');
+  const usercontrols = document.getElementById('usercontrols');
+  const next = document.createElement('a');
+  const imgNext = document.createElement('img');
+
+  next.href = '#';
+  next.id = 'next';
+  next.alt = 'next button';
+
+  imgNext.src = '/assets/textures/words/next.png';
 
   next.onclick = (e) => {
     e.preventDefault();
@@ -113,6 +210,9 @@ function userControls() {
     const current = storyboardIterator.next();
     storyboardHandler(current);
   };
+
+  next.appendChild(imgNext);
+  usercontrols.appendChild(next);
 }
 
 function physicsHandler(list, cannonWorld) {
@@ -339,33 +439,6 @@ function addAmbientSound() {
   });
 }
 
-function thirdPerson() {
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.update();
-
-  camera.position.set(-3.609879835590135, 2.572977063101824, -4.954594089199559);
-  camera.lookAt(0, 0, 0);
-}
-
-function firstPerson() {
-  const mirror = scene.getObjectByName('mirror');
-  controls = new PointerLockControls(camera, document.body);
-
-  controls.isPointerLockControls = true;
-  controls.lock();
-
-  camera.position.set(0, 1.65, 0.1);
-  camera.lookAt(getCenterPoint(mirror));
-
-  controls.addEventListener('lock', () => {
-    console.log('locked');
-  });
-
-  controls.addEventListener('unlock', () => {
-    // thirdPerson();
-  });
-}
-
 function loadNextAvatar(index) {
   const avatar = scene.getObjectByName('avatar');
 
@@ -536,7 +609,6 @@ function init() {
   renderer.xr.enabled = true;
 
   document.body.appendChild(renderer.domElement);
-  document.body.appendChild(VRButton.createButton(renderer));
 
   // ThirdPerson Controls
   thirdPerson();
@@ -614,7 +686,7 @@ function addThreeControls() {
   );
   threeControl.add(
     {
-      'Camera Position': () => console.log(camera.position),
+      'Camera Position': () => console.log(camera.position.x, camera.position.y, camera.position.z),
     },
     'Camera Position'
   );

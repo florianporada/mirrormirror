@@ -26,7 +26,7 @@ export function dummy() {
 /**
  * Toggles between the loading UI and the main canvas UI.
  */
-export function setLoadingState(showLoadingUI, message = 'loading...') {
+export function setLoadingState(showLoadingUI, message = '') {
   const loading = document.getElementById('loading');
   const loadingMessage = loading.getElementsByClassName('loading-message');
   const main = document.getElementById('main');
@@ -64,4 +64,35 @@ export function createID() {
       .map(() => String.fromCharCode(Math.floor(Math.random() * 26) + 97))
       .join('') + Date.now().toString(24)
   );
+}
+
+export function addPosenetButton(cb) {
+  const elementExists = document.getElementById('posenetbutton');
+
+  if (!elementExists) {
+    const usercontrols = document.getElementById('usercontrols');
+    const posenet = document.createElement('a');
+    const posenetImage1 = document.createElement('img');
+    const posenetImage2 = document.createElement('img');
+    const posenetImage3 = document.createElement('img');
+
+    posenet.href = '#';
+    posenet.id = 'posenetbutton';
+    posenet.alt = 'next button';
+
+    posenetImage1.src = '/assets/textures/words/connect.png';
+    posenetImage2.src = '/assets/textures/words/to.png';
+    posenetImage3.src = '/assets/textures/words/body.png';
+
+    posenet.onclick = (e) => {
+      e.preventDefault();
+
+      cb();
+    };
+
+    posenet.appendChild(posenetImage1);
+    posenet.appendChild(posenetImage2);
+    posenet.appendChild(posenetImage3);
+    usercontrols.appendChild(posenet);
+  }
 }

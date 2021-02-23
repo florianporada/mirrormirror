@@ -265,9 +265,9 @@ async function textObject({ position, text, rotation, name, scale, addLight }) {
   parent.rotation.set(rot.x, rot.y + THREE.MathUtils.degToRad(180), rot.z);
 
   if (addLight) {
-    const light = new THREE.PointLight(0xfbf1e6, 1);
+    const light = new THREE.PointLight(0xfbf1e6, 2, 10);
 
-    light.position.set(0, 2, -2);
+    light.position.set(-4, 0, -5);
     parent.add(light);
   }
 
@@ -306,8 +306,8 @@ async function textObject({ position, text, rotation, name, scale, addLight }) {
 
         offsetX += width + 0.05;
 
-        if (index % 3 === 3 - 1) {
-          offsetY += height + 0.05;
+        if (index % 3 === 0) {
+          offsetY += height + 0.5;
           offsetX = 0;
         }
 

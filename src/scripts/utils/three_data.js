@@ -74,13 +74,13 @@ const skyboxes = [
 
 const storyboard = [
   {
-    cameraPosition: new THREE.Vector3(35.98, 17.06, 22.92),
+    cameraPosition: new THREE.Vector3(37.87368421052629, 17.957894736842107, 24.126315789473665),
     title: '#1',
-    text: 'what do you do questionmark exclamationmark',
+    text: 'welcome to your self exclamationmark',
     textRotation: {
-      x: THREE.MathUtils.radToDeg(0),
-      y: THREE.MathUtils.radToDeg(-150),
-      z: THREE.MathUtils.radToDeg(0),
+      x: THREE.MathUtils.degToRad(0),
+      y: THREE.MathUtils.degToRad(40),
+      z: THREE.MathUtils.degToRad(0),
     },
     textPosition: new THREE.Vector3(29.2, 15.65, 20.95),
     options: {
@@ -88,43 +88,43 @@ const storyboard = [
     },
   },
   {
-    cameraPosition: new THREE.Vector3(-5, 3, 13),
+    cameraPosition: new THREE.Vector3(-12.420529948766315, 7.484953274651715, -20.427522578353276),
     title: '#2',
     text: 'why do you want to identify with your avatar questionmark',
     textRotation: {
-      x: THREE.MathUtils.radToDeg(0),
-      y: THREE.MathUtils.radToDeg(-150),
-      z: THREE.MathUtils.radToDeg(0),
+      x: THREE.MathUtils.degToRad(0),
+      y: THREE.MathUtils.degToRad(200),
+      z: THREE.MathUtils.degToRad(0),
     },
-    textPosition: new THREE.Vector3(-5, 3, 13),
+    textPosition: new THREE.Vector3(-4.787694544476471, 7.905273090393734, -12.75900177034477),
     options: {
       rotate: false,
     },
   },
   {
-    cameraPosition: new THREE.Vector3(2, 3, 3),
+    cameraPosition: new THREE.Vector3(22.827497790023294, 9.647016312595355, -6.616037335618521),
     title: '#3',
     text: 'how do you identify with your digital body questionmark',
     textRotation: {
-      x: THREE.MathUtils.radToDeg(0),
-      y: THREE.MathUtils.radToDeg(-150),
-      z: THREE.MathUtils.radToDeg(0),
+      x: THREE.MathUtils.degToRad(0),
+      y: THREE.MathUtils.degToRad(80),
+      z: THREE.MathUtils.degToRad(0),
     },
-    textPosition: new THREE.Vector3(2, 3, 3),
+    textPosition: new THREE.Vector3(13.535922616169895, 8.5732032536984, -1.1491414168321328),
     options: {
       rotate: false,
     },
   },
   {
-    cameraPosition: new THREE.Vector3(1, 23, 3),
+    cameraPosition: new THREE.Vector3(-23.180640855215692, 8.474568483694275, 17.060714634760334),
     title: '#4',
     text: 'what connects you with your digital self questionmark',
     textRotation: {
-      x: THREE.MathUtils.radToDeg(0),
-      y: THREE.MathUtils.radToDeg(-150),
-      z: THREE.MathUtils.radToDeg(0),
+      x: THREE.MathUtils.degToRad(0),
+      y: THREE.MathUtils.degToRad(-70),
+      z: THREE.MathUtils.degToRad(0),
     },
-    textPosition: new THREE.Vector3(1, 23, 3),
+    textPosition: new THREE.Vector3(-15.883553229171277, 8.12530281282566, 7.788460114443904),
     options: {
       rotate: false,
     },
