@@ -1,7 +1,7 @@
 {
   "name": "mirrormirror",
-  "version": "0.0.1",
-  "description": "VR inner body experience",
+  "version": "1.0.1",
+  "description": "An empathy machine for your digital self",
   "keywords": [
     "vr",
     "webxr",

@@ -10,7 +10,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
-import { addPosenetButton, setLoadingState } from './utils/helper';
+import { addControlButton, imageTextElement, setLoadingState } from './utils/helper';
 import { getCenterPoint, setThreeContext, toggleAxesHelper } from './utils/three_helper';
 import { skyboxes, avatars, storyboard, roomObjects } from './utils/three_data';
 import { joints, initPoseNet, disposePoseNet } from './utils/posenet';
@@ -57,40 +57,76 @@ const objLoader = new OBJLoader();
 //   .setPath('/assets/textures/cube/')
 //   .load(skyboxes[0]);
 
+function handlePosenetButtons() {
+  const connectPosenetBtn = imageTextElement('connect body', 'connectposenetbtn', () => {
+    guiState.appControl.posenetActive = true;
+    initPoseNet();
+    const activeButton = document.getElementById('connectposenetbtn');
+    if (activeButton) activeButton.remove();
+  });
+  const disconnectPosenetBtn = imageTextElement('disconnect body', 'disconnectposenetbtn', () => {
+    guiState.appControl.posenetActive = false;
+    disposePoseNet();
+    const activeButton = document.getElementById('disconnectposenetbtn');
+    if (activeButton) activeButton.remove();
+  });
+
+  if (guiState.appControl.posenetActive) {
+    const activeButton = document.getElementById('connectposenetbtn');
+
+    if (activeButton) activeButton.remove();
+    addControlButton(disconnectPosenetBtn);
+  } else {
+    const activeButton = document.getElementById('disconnectposenetbtn');
+
+    if (activeButton) activeButton.remove();
+    addControlButton(connectPosenetBtn);
+  }
+}
+
 function thirdPerson() {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.update();
 
   camera.position.set(-3.609879835590135, 2.572977063101824, -4.954594089199559);
-  camera.lookAt(0, 0, 0);
+  controls.target = new THREE.Vector3(0, 1.5, 0);
 }
 
 function firstPerson() {
   const mirror = scene.getObjectByName('mirror');
-  const button = document.getElementById('next');
 
   controls = new PointerLockControls(camera, document.body);
-
   controls.isPointerLockControls = true;
   controls.lock();
 
   camera.position.set(0, 1.65, 0.1);
   camera.lookAt(getCenterPoint(mirror));
 
+  handlePosenetButtons();
+
+  // triggers when going in pointer mode
   controls.addEventListener('lock', () => {
-    button.textContent = 'Press ESC';
-    addPosenetButton(() => {
-      initPoseNet();
-    });
+    const pressEscBtn = imageTextElement('press esc', 'pressesc');
+    const goInsideBtn = document.getElementById('goinside');
+
+    if (goInsideBtn) goInsideBtn.remove();
+
+    handlePosenetButtons();
+    addControlButton(pressEscBtn);
   });
 
+  // triggers when going out of pointer mode
   controls.addEventListener('unlock', () => {
-    button.textContent = 'Go inside';
-
-    addPosenetButton(() => {
-      initPoseNet();
+    const pressEscBtn = document.getElementById('pressesc');
+    const goInsideBtn = imageTextElement('go inside', 'goinside', () => {
+      firstPerson();
     });
+
+    if (pressEscBtn) pressEscBtn.remove();
+
     thirdPerson();
+    addControlButton(goInsideBtn);
+    handlePosenetButtons();
   });
 }
 
@@ -99,23 +135,18 @@ function storyboardHandler(iter) {
     // controls.enablePan = true;
     controls.enableZoom = true;
 
-    const usercontrols = document.getElementById('usercontrols');
-    const button = document.getElementById('next');
-
     if (isMobile()) {
-      usercontrols.appendChild(VRButton.createButton(renderer));
-
-      button.textContent = '';
-      button.onclick = (e) => {
-        e.preventDefault();
-      };
+      addControlButton(VRButton.createButton(renderer));
     } else {
-      button.textContent = 'Go inside';
-      button.onclick = (e) => {
-        e.preventDefault();
+      const nextBtn = document.getElementById('next');
+      const pressEscBtn = imageTextElement('press esc', 'pressesc', () => {
+        if (typeof controls.lock === 'function') controls.lock();
+      });
 
-        firstPerson();
-      };
+      if (nextBtn) nextBtn.remove();
+
+      handlePosenetButtons();
+      addControlButton(pressEscBtn);
     }
 
     const from = {
@@ -146,6 +177,10 @@ function storyboardHandler(iter) {
   }
 
   currentStory = iter.value;
+
+  if (currentStory.title === '#2') {
+    sound.play();
+  }
 
   controls.enablePan = false;
   // controls.enableZoom = false;
@@ -194,25 +229,13 @@ function storyboardHandler(iter) {
 }
 
 function userControls() {
-  const usercontrols = document.getElementById('usercontrols');
-  const next = document.createElement('a');
-  const imgNext = document.createElement('img');
-
-  next.href = '#';
-  next.id = 'next';
-  next.alt = 'next button';
-
-  imgNext.src = '/assets/textures/words/next.png';
-
-  next.onclick = (e) => {
-    e.preventDefault();
-
+  // const usercontrols = document.getElementById('usercontrols');
+  const nextButton = imageTextElement('next', 'next', () => {
     const current = storyboardIterator.next();
     storyboardHandler(current);
-  };
+  });
 
-  next.appendChild(imgNext);
-  usercontrols.appendChild(next);
+  addControlButton(nextButton);
 }
 
 function physicsHandler(list, cannonWorld) {
@@ -426,16 +449,18 @@ function addCamera({ name, position, debug = false }) {
 
 function addAmbientSound() {
   const listener = new THREE.AudioListener();
+  camera.add(listener);
 
   // create a global audio source
-  sound = new THREE.Audio(listener);
+  // sound = new THREE.Audio(listener);
+  sound = new THREE.PositionalAudio(listener);
 
   // load a sound and set it as the Audio object's buffer
   const audioLoader = new THREE.AudioLoader();
-  audioLoader.load('assets/sounds/ambient01.mp3', (buffer) => {
+  audioLoader.load('assets/sounds/Potential Lover - A V2.mp3', (buffer) => {
     sound.setBuffer(buffer);
     sound.setLoop(true);
-    sound.setVolume(0.1);
+    sound.setVolume(0.4);
   });
 }
 
@@ -501,15 +526,15 @@ function initCannon() {
 }
 
 async function initObjects(list) {
-  Object.keys(list).forEach(async (key) => {
-    if (list[key].disable) return;
-    const objects = !Array.isArray(list[key].obj) ? [list[key].obj] : list[key].obj;
+  Object.values(list).forEach(async (value) => {
+    if (value.disable) return;
+    const objects = !Array.isArray(value.obj) ? [value.obj] : value.obj;
 
     for (let index = 0; index < objects.length; index += 1) {
       // eslint-disable-next-line no-await-in-loop
       const element = await objects[index];
 
-      if (list[key].physics && !list[key].disable) {
+      if (value.physics && !value.disable) {
         const { position, quaternion } = element;
         const { width, height, depth } = element.geometry.parameters;
         const physicBodySize = new CANNON.Vec3(width, height, depth || 0.1).scale(0.5);
@@ -522,7 +547,7 @@ async function initObjects(list) {
         );
 
         const physicBody = new CANNON.Body({
-          mass: list[key].gravity ? 5 : 0,
+          mass: value.gravity ? 5 : 0,
           position: physicBodyPosition, // m
           shape: new CANNON.Box(physicBodySize),
           quaternion: physicBodyQuat,
@@ -531,6 +556,10 @@ async function initObjects(list) {
         physicBody.linearDamping = 0.9;
 
         world.addBody(physicBody);
+      }
+
+      if (value.audioSource && sound) {
+        element.add(sound);
       }
 
       if (element) {

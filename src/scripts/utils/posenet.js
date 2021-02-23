@@ -128,8 +128,8 @@ const guiState = {
     showBoundingBox: false,
   },
   trackingControl: {
-    trackHead: false,
-    trackBody: false,
+    trackHead: true,
+    trackBody: true,
   },
   net: null,
 };

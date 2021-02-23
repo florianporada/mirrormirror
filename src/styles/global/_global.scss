@@ -34,6 +34,11 @@ p {
 a {
   color: $color-primary;
   text-decoration: none;
+  transition: transform 0.25s ease-in;
+
+  &:hover {
+    transform: scale(1.05) rotate(4deg);
+  }
 }
 
 img {
@@ -60,25 +65,18 @@ ul {
   transition: opacity 0.5s;
   width: 100%;
 
-  .loading-text {
-    color: $color-primary;
-    font-size: 5rem;
-    text-align: center;
-    z-index: 1;
-  }
-
   .loading-spinner {
     animation: spin 3s infinite linear;
     height: 140px;
     width: auto;
   }
 
-  .loading-info {
+  .loading-message {
     bottom: 20px;
     height: auto;
     position: absolute;
     right: 20px;
-    width: 250px;
+    // width: 250px;
   }
 }
 
@@ -90,11 +88,22 @@ ul {
   width: calc(640px / 2);
 }
 
+#about {
+  position: absolute;
+  right: 25px;
+  top: 25px;
+
+  img {
+    height: auto;
+    width: 200px;
+  }
+}
+
 #usercontrols {
   align-items: flex-end;
   bottom: 25px;
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   font-family: 'OrangeJuice';
   font-size: 8rem;
   position: absolute;
@@ -102,16 +111,18 @@ ul {
 
   a {
     color: $yellow;
+    display: flex;
+    margin-bottom: 15px;
+
+    &:last-of-type {
+      margin-bottom: 0;
+    }
   }
 
   img {
     height: auto;
     max-width: 200px;
   }
-}
-
-#posenetbutton {
-  display: flex;
 }
 
 @keyframes spin {
@@ -129,5 +140,23 @@ ul {
 
   100% {
     transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes wiggle {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(1.2deg);
+  }
+
+  90% {
+    transform: rotate(-2deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
   }
 }

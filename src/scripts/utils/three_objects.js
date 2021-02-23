@@ -301,14 +301,14 @@ async function textObject({ position, text, rotation, name, scale, addLight }) {
         frame.name = word;
         frame.receiveShadow = true;
         frame.castShadow = true;
-        frame.position.set(-offsetX, -offsetY, 0);
+        frame.position.set(-offsetX - width / 2, -offsetY, 0);
         frame.add(plane);
-
-        offsetX += width + 0.05;
 
         if (index % 3 === 0) {
           offsetY += height + 0.5;
           offsetX = 0;
+        } else {
+          offsetX += width + 0.1;
         }
 
         resolve(frame);

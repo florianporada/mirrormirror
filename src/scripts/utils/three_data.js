@@ -102,12 +102,12 @@ const storyboard = [
     },
   },
   {
-    cameraPosition: new THREE.Vector3(22.827497790023294, 9.647016312595355, -6.616037335618521),
+    cameraPosition: new THREE.Vector3(22.52617722790273, 8.739174305664427, -8.609860688049904),
     title: '#3',
     text: 'how do you identify with your digital body questionmark',
     textRotation: {
       x: THREE.MathUtils.degToRad(0),
-      y: THREE.MathUtils.degToRad(80),
+      y: THREE.MathUtils.degToRad(92),
       z: THREE.MathUtils.degToRad(0),
     },
     textPosition: new THREE.Vector3(13.535922616169895, 8.5732032536984, -1.1491414168321328),
@@ -197,6 +197,7 @@ const roomObjects = {
     disable: false,
     physics: true,
     gravity: true,
+    audioSource: true,
     obj: furnitureObject({
       name: 'music',
       position: { x: -3, y: dropHeight + 2, z: 1.7 },

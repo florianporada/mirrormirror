@@ -24,25 +24,6 @@ export function dummy() {
 }
 
 /**
- * Toggles between the loading UI and the main canvas UI.
- */
-export function setLoadingState(showLoadingUI, message = '') {
-  const loading = document.getElementById('loading');
-  const loadingMessage = loading.getElementsByClassName('loading-message');
-  const main = document.getElementById('main');
-
-  if (showLoadingUI) {
-    loadingMessage[0].textContent = message;
-    loading.style.display = 'flex';
-    main.style.display = 'none';
-  } else {
-    loadingMessage[0].textContent = '';
-    loading.style.display = 'none';
-    main.style.display = 'block';
-  }
-}
-
-/**
  * Gets rotation coords from headset (camera)
  *
  * @export
@@ -57,6 +38,12 @@ export function getVrHeadCoords(camera) {
   return camera.rotation;
 }
 
+/**
+ * Creates random id
+ *
+ * @export
+ * @returns {String} id
+ */
 export function createID() {
   return (
     Array(16)
@@ -66,33 +53,71 @@ export function createID() {
   );
 }
 
-export function addPosenetButton(cb) {
-  const elementExists = document.getElementById('posenetbutton');
+/**
+ * Creates image elements based on input text
+ *
+ * @export
+ * @param {String} text
+ * @param {String} id
+ * @param {Function} onClickFunc
+ * @returns
+ */
+export function imageTextElement(text, id, onClickFunc) {
+  const words = text.split(' ');
+  const wrapper = document.createElement('a');
+
+  wrapper.href = '#';
+  wrapper.id = id;
+  wrapper.onclick = (e) => {
+    e.preventDefault();
+
+    if (onClickFunc) onClickFunc();
+  };
+
+  words.forEach((word) => {
+    const wordImage = document.createElement('img');
+
+    wordImage.src = `/assets/textures/words/${word.trim()}.png`;
+    wordImage.alt = word;
+
+    wrapper.appendChild(wordImage);
+  });
+
+  return wrapper;
+}
+
+/**
+ * Adds child to user control element
+ *
+ * @export
+ * @param {Element} element
+ */
+export function addControlButton(element) {
+  const elementExists = document.getElementById(element.id);
 
   if (!elementExists) {
     const usercontrols = document.getElementById('usercontrols');
-    const posenet = document.createElement('a');
-    const posenetImage1 = document.createElement('img');
-    const posenetImage2 = document.createElement('img');
-    const posenetImage3 = document.createElement('img');
 
-    posenet.href = '#';
-    posenet.id = 'posenetbutton';
-    posenet.alt = 'next button';
+    usercontrols.appendChild(element);
+  }
+}
 
-    posenetImage1.src = '/assets/textures/words/connect.png';
-    posenetImage2.src = '/assets/textures/words/to.png';
-    posenetImage3.src = '/assets/textures/words/body.png';
+/**
+ * Toggles between the loading UI and the main canvas UI.
+ */
+export function setLoadingState(showLoadingUI, message = 'loading') {
+  const loading = document.getElementById('loading');
+  const loadingMessage = loading.getElementsByClassName('loading-message');
+  const main = document.getElementById('main');
+  const text = imageTextElement(message, createID());
 
-    posenet.onclick = (e) => {
-      e.preventDefault();
-
-      cb();
-    };
-
-    posenet.appendChild(posenetImage1);
-    posenet.appendChild(posenetImage2);
-    posenet.appendChild(posenetImage3);
-    usercontrols.appendChild(posenet);
+  if (showLoadingUI) {
+    loadingMessage[0].appendChild(text);
+    loading.style.display = 'flex';
+    main.style.display = 'none';
+  } else {
+    loadingMessage[0].innerHTML = '';
+    loading.style.display = 'none';
+    main.style.display = 'block';
   }
 }
