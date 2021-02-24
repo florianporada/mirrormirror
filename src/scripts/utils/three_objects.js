@@ -278,7 +278,7 @@ async function textObject({ position, text, rotation, name, scale, addLight }) {
   let offsetX = 0;
   let offsetY = 0;
 
-  function loadObject(texture, word, index) {
+  function loadObject(texture, word, index, wordBreak = 3) {
     return new Promise((resolve) => {
       textureLoader.load(texture, (tex) => {
         // eslint-disable-next-line no-param-reassign
@@ -308,7 +308,7 @@ async function textObject({ position, text, rotation, name, scale, addLight }) {
         frame.position.set(-offsetX - width / 2, -offsetY, 0);
         frame.add(plane);
 
-        if (index % 3 === 0) {
+        if (index % wordBreak === wordBreak - 1) {
           offsetY += height + 0.5;
           offsetX = 0;
         } else {

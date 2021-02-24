@@ -81,7 +81,7 @@ const skyboxes = [
 
 const storyboard = [
   {
-    cameraPosition: new THREE.Vector3(37.87368421052629, 17.957894736842107, 24.126315789473665),
+    cameraPosition: new THREE.Vector3(39.14610911446315, 17.450636808146726, 22.406214959699735),
     title: '#1',
     text: 'welcome to your self exclamationmark',
     textRotation: {
@@ -95,7 +95,7 @@ const storyboard = [
     },
   },
   {
-    cameraPosition: new THREE.Vector3(-12.420529948766315, 7.484953274651715, -20.427522578353276),
+    cameraPosition: new THREE.Vector3(-14.296061423736809, 8.430708058282699, -18.764955577506825),
     title: '#2',
     text: 'why do you want to identify with your avatar questionmark',
     textRotation: {
@@ -109,7 +109,7 @@ const storyboard = [
     },
   },
   {
-    cameraPosition: new THREE.Vector3(22.52617722790273, 8.739174305664427, -8.609860688049904),
+    cameraPosition: new THREE.Vector3(21.837966039893576, 9.426960814616075, -9.60037385498315),
     title: '#3',
     text: 'how do you identify with your digital body questionmark',
     textRotation: {
@@ -123,7 +123,7 @@ const storyboard = [
     },
   },
   {
-    cameraPosition: new THREE.Vector3(-23.180640855215692, 8.474568483694275, 17.060714634760334),
+    cameraPosition: new THREE.Vector3(-20.939973121502412, 10.297540740977704, 18.86018519661739),
     title: '#4',
     text: 'what connects you with your digital self questionmark',
     textRotation: {
