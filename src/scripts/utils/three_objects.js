@@ -82,10 +82,14 @@ function mirrorObject({ name, rotation, position, size, orbit } = {}) {
   return frame;
 }
 
-function floorObject({ name, position, size } = {}) {
+function floorObject({ name, position, size, texture } = {}) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
   const boxGeometry = new THREE.BoxBufferGeometry(size, 0.1, size);
-  const boxMaterial = new THREE.MeshPhongMaterial();
+  const map = new THREE.TextureLoader().load(texture);
+  map.wrapS = THREE.RepeatWrapping;
+  map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(4, 4);
+  const boxMaterial = new THREE.MeshPhongMaterial({ map });
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
 
   box.name = name;

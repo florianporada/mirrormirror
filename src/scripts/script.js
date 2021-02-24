@@ -10,7 +10,7 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 
 import { addControlButton, imageTextElement, setLoadingState } from './utils/helper';
 import { getCenterPoint, setThreeContext, toggleAxesHelper } from './utils/three_helper';
-import { skyboxes, avatars, storyboard, roomObjects } from './utils/three_data';
+import { skyboxes, avatars, storyboard, roomObjects, playlist } from './utils/three_data';
 import { joints, initPoseNet, disposePoseNet } from './utils/posenet';
 import {
   lightObject,
@@ -54,11 +54,6 @@ let currentStory = storyboardIterator.next();
 let world;
 
 const lookAtDirection = new THREE.Vector3();
-
-// const textureLoader = new THREE.TextureLoader();
-// const background = new THREE.CubeTextureLoader()
-//   .setPath('/assets/textures/cube/')
-//   .load(skyboxes[0]);
 
 function handlePosenetButtons() {
   const connectPosenetBtn = imageTextElement('connect body', 'connectposenetbtn', () => {
@@ -363,12 +358,6 @@ function addSound() {
   sound = new THREE.PositionalAudio(listener);
 
   // load a sound and set it as the Audio object's buffer
-  const audioLoader = new THREE.AudioLoader();
-  audioLoader.load('assets/sounds/Potential Lover - A V2.mp3', (buffer) => {
-    sound.setBuffer(buffer);
-    sound.setLoop(true);
-    sound.setVolume(0.4);
-  });
 }
 
 function loadAvatar(index = 1) {
@@ -436,6 +425,34 @@ function initCannon() {
   // world.solver = solver
 }
 
+function addAudioSource(element, track) {
+  const audioLoader = new THREE.AudioLoader();
+  const loader = new THREE.FontLoader();
+
+  // eslint-disable-next-line no-loop-func
+  audioLoader.load(track.url, (buffer) => {
+    sound.setBuffer(buffer);
+    sound.setLoop(true);
+    sound.setVolume(0.4);
+
+    loader.load(`assets/helvetiker_regular.typeface.json`, (response) => {
+      const textGeo = new THREE.TextGeometry(`music: ${track.name}` || '', {
+        font: response,
+        size: 0.05,
+        height: 0.01,
+      });
+      const textMaterial = new THREE.MeshPhongMaterial({ color: 0xff9224 });
+      const textMesh = new THREE.Mesh(textGeo, textMaterial);
+
+      textMesh.position.set(1, -0.85, 0);
+      textMesh.rotateY(THREE.MathUtils.degToRad(180));
+
+      element.add(textMesh);
+      element.add(sound);
+    });
+  });
+}
+
 async function initObjects(list) {
   Object.values(list).forEach(async (value) => {
     if (value.disable) return;
@@ -444,10 +461,10 @@ async function initObjects(list) {
     for (let index = 0; index < objects.length; index += 1) {
       // eslint-disable-next-line no-await-in-loop
       const element = await objects[index];
+      const { position, quaternion, geometry } = element;
+      const { width, height, depth } = geometry.parameters;
 
       if (value.physics && !value.disable) {
-        const { position, quaternion } = element;
-        const { width, height, depth } = element.geometry.parameters;
         const physicBodySize = new CANNON.Vec3(width, height, depth || 0.1).scale(0.5);
         const physicBodyPosition = new CANNON.Vec3(position.x, position.y, position.z);
         const physicBodyQuat = new CANNON.Quaternion(
@@ -470,7 +487,8 @@ async function initObjects(list) {
       }
 
       if (value.audioSource && sound) {
-        element.add(sound);
+        const track = playlist[Math.floor(Math.random() * playlist.length)];
+        addAudioSource(element, track);
       }
 
       if (element) {
@@ -485,11 +503,8 @@ function init() {
 
   clock = new THREE.Clock();
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xfbf1e6);
-  scene.fog = new THREE.Fog(0xffffff, 5, 60);
-
-  // Debug View
-  // debug();
+  scene.background = new THREE.Color(0xfbf1e6); // #fbf1e6
+  scene.fog = new THREE.Fog(0xfbf1e6, 5, 60);
 
   // Camera
   addCamera({
@@ -535,10 +550,10 @@ function init() {
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.autoClear = false;
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth - 15, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.xr.enabled = true;
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth - 15, window.innerHeight);
 
   document.body.appendChild(renderer.domElement);
 

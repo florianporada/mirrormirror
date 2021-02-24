@@ -66,6 +66,12 @@ const avatars = [
   },
 ];
 
+const playlist = [
+  { name: 'Potential Lover - A V2', url: 'assets/sounds/a_v2.mp3' },
+  { name: 'Potential Lover - B', url: 'assets/sounds/b.mp3' },
+  { name: 'Potential Lover - LEAVEYOURFRIENDS V1', url: 'assets/sounds/LEAVEYOURFRIENDS_V1.mp3' },
+];
+
 const skyboxes = [
   [
     'MilkyWay/dark-s_px.jpg',
@@ -158,6 +164,7 @@ const roomObjects = {
     obj: floorObject({
       name: 'floor',
       size: 15,
+      texture: 'assets/textures/room_assets/floor.jpg',
       position: {
         y: -0.1,
         z: -0,
@@ -363,4 +370,4 @@ const roomObjects = {
   },
 };
 
-export { avatars, skyboxes, storyboard, roomObjects };
+export { avatars, skyboxes, storyboard, roomObjects, playlist };

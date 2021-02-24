@@ -537,7 +537,7 @@ function detectPoseInRealTime(video, net) {
  * available camera devices, and setting off the detectPoseInRealTime function.
  */
 export async function initPoseNet() {
-  setLoadingState(true, 'Connecting to your body');
+  setLoadingState(true, 'connecting to your body');
   const net = await posenet.load({
     architecture: guiState.input.architecture,
     outputStride: guiState.input.outputStride,
