@@ -353,6 +353,7 @@ function bodyObject({ url, name, position, scale, playAnimation }) {
       break;
     default:
       loader = objLoader;
+      // eslint-disable-next-line no-console
       console.warn('no valid object deteted (obj, gltf, glb');
   }
 
@@ -368,12 +369,12 @@ function bodyObject({ url, name, position, scale, playAnimation }) {
           obj.scene.name = name;
 
           obj.scene.traverse((node) => {
-            // eslint-disable-next-line no-param-reassign
             if (node.isMesh || node.isLight) {
               /* eslint-disable no-param-reassign */
               node.receiveShadow = true;
               node.castShadow = true;
               node.material.flatShading = false;
+              /* eslint-enable no-param-reassign */
             }
           });
 
@@ -401,12 +402,12 @@ function bodyObject({ url, name, position, scale, playAnimation }) {
           resolve([obj]);
         }
       },
-      // called when loading is in progresses
       (xhr) => {
+        // eslint-disable-next-line no-console
         console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
       },
-      // called when loading has errors
       (error) => {
+        // eslint-disable-next-line no-console
         console.log('An error happened', error);
         reject(error);
       }

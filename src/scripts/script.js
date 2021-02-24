@@ -370,6 +370,7 @@ function loadAvatar(index = 1) {
   const avatar = scene.getObjectByName('avatar');
   if (avatar) scene.remove(avatar);
 
+  // eslint-disable-next-line no-console
   console.log(`Load avatar ${index}: ${avatars[index].description}`);
 
   bodyObject({
@@ -612,6 +613,7 @@ function addThreeControls() {
   );
   threeControl.add(
     {
+      // eslint-disable-next-line no-console
       'Camera Position': () => console.log(camera.position.x, camera.position.y, camera.position.z),
     },
     'Camera Position'
