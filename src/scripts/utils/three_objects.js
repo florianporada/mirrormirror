@@ -333,7 +333,7 @@ async function textObject({ position, text, rotation, name, scale, addLight }) {
   return parent;
 }
 
-function bodyObject({ url, name, position, scale, playAnimation, texture }) {
+function bodyObject({ url, name, position, scale, playAnimation }) {
   // defaults
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
   const scl = { ...{ x: 1, y: 1, z: 1 }, ...scale };
@@ -374,31 +374,8 @@ function bodyObject({ url, name, position, scale, playAnimation, texture }) {
               node.receiveShadow = true;
               node.castShadow = true;
               node.material.flatShading = false;
-
-              if (node instanceof THREE.Mesh) {
-                // cameraLookAt = getCenterPoint(node);
-                // node.geometry.normalizeNormals();
-                // textureLoader.load('assets/textures/fisheye_sphere.jpg', (tex) => {
-                //   const material = new THREE.MeshBasicMaterial({
-                //     color: 0xff0000, // red (can also use a CSS color string here)
-                //     // map: tex,
-                //     flatShading: true,
-                //     skinning: true,
-                //   });
-                //   console.log(tex, node);
-                //   node.material = material;
-                //   node.material.needsUpdate = true;
-                // });
-                // if (texture) {
-                //   node.skinning = true;
-                //   node.material.map = map;
-                //   node.material.needsUpdate = true;
-                // }
-              }
             }
           });
-
-          console.log(obj, texture);
 
           obj.scene.castShadow = true;
           obj.scene.receiveShadow = true;

@@ -16,6 +16,13 @@ const avatars = [
     headAnchor: 'neck_joint_1',
   },
   {
+    object: '/assets/models/collage_03_rigged_tex/collage_03_rigged.gltf',
+    image: '/assets/models/collage_03_rigged/collage_03.png',
+    description: 'The rigged buddy',
+    playAnimation: false,
+    headAnchor: 'spine006',
+  },
+  {
     object: '/assets/models/collage_03_rigged/collage_03_rigged.gltf',
     image: '/assets/models/collage_03_rigged/collage_03.png',
     description: 'The rigged buddy',

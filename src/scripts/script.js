@@ -375,7 +375,6 @@ function loadAvatar(index = 1) {
   bodyObject({
     url: avatars[index].object,
     name: 'avatar',
-    texture: avatars[index].image,
     playAnimation: avatars[index].playAnimation,
     position: {
       y: 0,
