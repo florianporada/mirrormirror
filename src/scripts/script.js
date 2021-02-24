@@ -5,8 +5,6 @@ import dat from 'dat.gui';
 import TWEEN from '@tweenjs/tween.js';
 
 import { VRButton } from 'three/examples/jsm/webxr/VRButton';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
@@ -14,7 +12,13 @@ import { addControlButton, imageTextElement, setLoadingState } from './utils/hel
 import { getCenterPoint, setThreeContext, toggleAxesHelper } from './utils/three_helper';
 import { skyboxes, avatars, storyboard, roomObjects } from './utils/three_data';
 import { joints, initPoseNet, disposePoseNet } from './utils/posenet';
-import { lightObject, lookAtObject, sphereObject, textObject } from './utils/three_objects';
+import {
+  lightObject,
+  lookAtObject,
+  sphereObject,
+  textObject,
+  bodyObject,
+} from './utils/three_objects';
 import { isMobile } from './utils/demo_util';
 
 // Global config
@@ -50,8 +54,7 @@ let currentStory = storyboardIterator.next();
 let world;
 
 const lookAtDirection = new THREE.Vector3();
-const gltfLoader = new GLTFLoader();
-const objLoader = new OBJLoader();
+
 // const textureLoader = new THREE.TextureLoader();
 // const background = new THREE.CubeTextureLoader()
 //   .setPath('/assets/textures/cube/')
@@ -130,6 +133,20 @@ function firstPerson() {
   });
 }
 
+function moveCamera(start, end, time, cb) {
+  new TWEEN.Tween(start)
+    .to(end, time || 3000)
+    .easing(TWEEN.Easing.Quadratic.InOut)
+    .onUpdate((d) => {
+      camera.position.set(d.x, d.y, d.z);
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+    })
+    .onComplete(() => {
+      if (typeof cb === 'function') cb();
+    })
+    .start();
+}
+
 function storyboardHandler(iter) {
   if (iter.done) {
     // controls.enablePan = true;
@@ -161,17 +178,9 @@ function storyboardHandler(iter) {
       z: 0,
     };
 
-    new TWEEN.Tween(from)
-      .to(to, 1000)
-      .easing(TWEEN.Easing.Quadratic.InOut)
-      .onUpdate((d) => {
-        camera.position.set(d.x, d.y, d.z);
-        camera.lookAt(new THREE.Vector3(0, 0, 0));
-      })
-      .onComplete(() => {
-        firstPerson();
-      })
-      .start();
+    moveCamera(from, to, 1000, () => {
+      firstPerson();
+    });
 
     return;
   }
@@ -184,21 +193,6 @@ function storyboardHandler(iter) {
 
   controls.enablePan = false;
   // controls.enableZoom = false;
-
-  function moveCamera(start, end) {
-    new TWEEN.Tween(start)
-      .to(end, 3000)
-      .easing(TWEEN.Easing.Quadratic.InOut)
-      .onUpdate((d) => {
-        camera.position.set(d.x, d.y, d.z);
-        camera.lookAt(new THREE.Vector3(0, 0, 0));
-      })
-      .onComplete(() => {
-        controls.target.copy(scene.position);
-        if (typeof currentStory.cb === 'function') currentStory.cb();
-      })
-      .start();
-  }
 
   textObject({
     position: currentStory.textPosition,
@@ -223,7 +217,10 @@ function storyboardHandler(iter) {
     };
 
     setTimeout(() => {
-      moveCamera(from, to);
+      moveCamera(from, to, 3000, () => {
+        controls.target.copy(scene.position);
+        if (typeof currentStory.cb === 'function') currentStory.cb();
+      });
     }, 1000);
   });
 }
@@ -337,101 +334,6 @@ function animate() {
   renderer.setAnimationLoop(render);
 }
 
-function addBody({ url, name, position, scale, playAnimation, texture }) {
-  // defaults
-  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
-  const scl = { ...{ x: 1, y: 1, z: 1 }, ...scale };
-  const regexExtension = /[^\\]*\.(\w+)$/;
-  const extension = url.match(regexExtension)[1];
-
-  let loader;
-
-  switch (extension) {
-    case 'obj':
-      loader = objLoader;
-      break;
-    case 'gltf':
-    case 'glb':
-      loader = gltfLoader;
-      break;
-    default:
-      loader = objLoader;
-      console.warn('no valid object deteted (obj, gltf, glb');
-  }
-
-  setLoadingState(true);
-  loader.load(
-    // resource URL
-    url,
-    // called when resource is loaded
-    (object) => {
-      const obj = object;
-
-      if (extension === 'gltf') {
-        obj.scene.name = name;
-
-        obj.scene.traverse((node) => {
-          // eslint-disable-next-line no-param-reassign
-          if (node.isMesh || node.isLight) {
-            /* eslint-disable no-param-reassign */
-            node.receiveShadow = true;
-            node.material.flatShading = false;
-            node.castShadow = true;
-            if (node.isMesh)
-              if (node instanceof THREE.Mesh) {
-                // cameraLookAt = getCenterPoint(node);
-                node.geometry.normalizeNormals();
-                // const map = textureLoader.load(texture);
-                if (texture) {
-                  //   node.skinning = false;
-                  //   node.material.map = map;
-                  //   node.material.needsUpdate = true;
-                }
-              }
-          }
-        });
-
-        obj.scene.castShadow = true;
-        obj.scene.receiveShadow = true;
-        obj.scene.position.set(pos.x, pos.y, pos.z);
-        obj.scene.scale.set(scl.x, scl.y, scl.z);
-        // obj.scene.rotation.y = THREE.MathUtils.degToRad(180);
-
-        if (obj.animations && obj.animations.length > 0 && playAnimation) {
-          const mixer = new THREE.AnimationMixer(obj.scene);
-
-          mixers.push(mixer);
-
-          obj.animations.forEach((clip) => {
-            mixer.clipAction(clip).play();
-          });
-        }
-
-        scene.add(obj.scene);
-      }
-
-      if (extension === 'obj') {
-        obj.name = name;
-        obj.castShadow = true;
-        obj.receiveShadow = true;
-
-        scene.add(obj);
-      }
-
-      setLoadingState(false);
-      onWindowResize();
-    },
-    // called when loading is in progresses
-    (xhr) => {
-      console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
-    },
-    // called when loading has errors
-    (error) => {
-      console.log('An error happened', error);
-    }
-  );
-}
-
 function addCamera({ name, position, debug = false }) {
   const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
 
@@ -447,7 +349,7 @@ function addCamera({ name, position, debug = false }) {
   }
 }
 
-function addAmbientSound() {
+function addSound() {
   const listener = new THREE.AudioListener();
   camera.add(listener);
 
@@ -464,22 +366,26 @@ function addAmbientSound() {
   });
 }
 
-function loadNextAvatar(index) {
+function loadAvatar(index = 1) {
   const avatar = scene.getObjectByName('avatar');
-
-  scene.remove(avatar);
+  if (avatar) scene.remove(avatar);
 
   console.log(`Load avatar ${index}: ${avatars[index].description}`);
 
-  addBody({
+  bodyObject({
     url: avatars[index].object,
     name: 'avatar',
     texture: avatars[index].image,
     playAnimation: avatars[index].playAnimation,
     position: {
-      y: 0.75,
+      y: 0,
       z: 0,
     },
+  }).then(([body, mxr]) => {
+    setLoadingState(false);
+    onWindowResize();
+    mxr.forEach((m) => mixers.push(m));
+    scene.add(body);
   });
 }
 
@@ -570,6 +476,8 @@ async function initObjects(list) {
 }
 
 function init() {
+  setLoadingState(true);
+
   clock = new THREE.Clock();
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xfbf1e6);
@@ -586,7 +494,7 @@ function init() {
   });
 
   // Sound
-  addAmbientSound();
+  addSound();
 
   // Lights
   const [light1, lightTarget] = lightObject({
@@ -613,17 +521,7 @@ function init() {
   scene.add(light);
 
   // Avatar
-  addBody({
-    url: avatars[guiState.threeControls.avatarIndex].object,
-    name: 'avatar',
-    texture: avatars[guiState.threeControls.avatarIndex].image,
-    playAnimation: avatars[guiState.threeControls.avatarIndex].playAnimation,
-    type: 'obj',
-    position: {
-      y: 0,
-      z: 0,
-    },
-  });
+  loadAvatar(guiState.threeControls.avatarIndex);
 
   scene.add(lookAtObject({ name: 'lookAtPoint', position: new THREE.Vector3(1, 1, 1) }));
   initCannon();
@@ -736,7 +634,7 @@ function addThreeControls() {
   );
 
   threeControlAvatarIndex.onChange((value) => {
-    loadNextAvatar(value);
+    loadAvatar(value);
   });
   threeControlRoomIndex.onChange((value) => {
     switchSkyBox(value);

@@ -1,9 +1,13 @@
 import * as THREE from 'three';
 
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { Reflector } from 'three/examples/jsm/objects/Reflector';
 import { Lensflare, LensflareElement } from 'three/examples/jsm/objects/Lensflare';
 import { createID } from './helper';
 
+const gltfLoader = new GLTFLoader();
+const objLoader = new OBJLoader();
 const textureLoader = new THREE.TextureLoader();
 
 function torusObject({ name, position } = {}) {
@@ -329,6 +333,110 @@ async function textObject({ position, text, rotation, name, scale, addLight }) {
   return parent;
 }
 
+function bodyObject({ url, name, position, scale, playAnimation, texture }) {
+  // defaults
+  const pos = { ...{ x: 0, y: 0, z: 0 }, ...position };
+  const scl = { ...{ x: 1, y: 1, z: 1 }, ...scale };
+  const regexExtension = /[^\\]*\.(\w+)$/;
+  const extension = url.match(regexExtension)[1];
+  const localMixer = [];
+
+  let loader;
+
+  switch (extension) {
+    case 'obj':
+      loader = objLoader;
+      break;
+    case 'gltf':
+    case 'glb':
+      loader = gltfLoader;
+      break;
+    default:
+      loader = objLoader;
+      console.warn('no valid object deteted (obj, gltf, glb');
+  }
+
+  return new Promise((resolve, reject) => {
+    loader.load(
+      // resource URL
+      url,
+      // called when resource is loaded
+      (object) => {
+        const obj = object;
+
+        if (extension === 'gltf') {
+          obj.scene.name = name;
+
+          obj.scene.traverse((node) => {
+            // eslint-disable-next-line no-param-reassign
+            if (node.isMesh || node.isLight) {
+              /* eslint-disable no-param-reassign */
+              node.receiveShadow = true;
+              node.castShadow = true;
+              node.material.flatShading = false;
+
+              if (node instanceof THREE.Mesh) {
+                // cameraLookAt = getCenterPoint(node);
+                // node.geometry.normalizeNormals();
+                // textureLoader.load('assets/textures/fisheye_sphere.jpg', (tex) => {
+                //   const material = new THREE.MeshBasicMaterial({
+                //     color: 0xff0000, // red (can also use a CSS color string here)
+                //     // map: tex,
+                //     flatShading: true,
+                //     skinning: true,
+                //   });
+                //   console.log(tex, node);
+                //   node.material = material;
+                //   node.material.needsUpdate = true;
+                // });
+                // if (texture) {
+                //   node.skinning = true;
+                //   node.material.map = map;
+                //   node.material.needsUpdate = true;
+                // }
+              }
+            }
+          });
+
+          console.log(obj, texture);
+
+          obj.scene.castShadow = true;
+          obj.scene.receiveShadow = true;
+          obj.scene.position.set(pos.x, pos.y, pos.z);
+          obj.scene.scale.set(scl.x, scl.y, scl.z);
+
+          if (obj.animations && obj.animations.length > 0 && playAnimation) {
+            const mixer = new THREE.AnimationMixer(obj.scene);
+
+            localMixer.push(mixer);
+
+            obj.animations.forEach((clip) => {
+              localMixer.clipAction(clip).play();
+            });
+          }
+
+          resolve([obj.scene, localMixer]);
+        } else if (extension === 'obj') {
+          obj.name = name;
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+
+          resolve([obj]);
+        }
+      },
+      // called when loading is in progresses
+      (xhr) => {
+        console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
+      },
+      // called when loading has errors
+      (error) => {
+        console.log('An error happened', error);
+        reject(error);
+      }
+    );
+  });
+}
+
 export {
   mirrorObject,
   floorObject,
@@ -340,4 +448,5 @@ export {
   furnitureObject,
   sphereObject,
   textObject,
+  bodyObject,
 };
