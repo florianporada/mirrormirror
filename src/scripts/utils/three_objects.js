@@ -403,7 +403,7 @@ function bodyObject({ url, name, position, scale, playAnimation }) {
           obj.castShadow = true;
           obj.receiveShadow = true;
 
-          resolve([obj]);
+          resolve([obj, localMixer]);
         }
       },
       (xhr) => {
