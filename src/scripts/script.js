@@ -148,6 +148,10 @@ function moveCamera(start, end, time, cb) {
 }
 
 function storyboardHandler(iter) {
+  const nextBtn = document.getElementById('next');
+
+  if (nextBtn) nextBtn.classList.add('not-active');
+
   if (iter.done) {
     // controls.enablePan = true;
     controls.enableZoom = true;
@@ -155,7 +159,6 @@ function storyboardHandler(iter) {
     if (isMobile()) {
       addControlButton(VRButton.createButton(renderer));
     } else {
-      const nextBtn = document.getElementById('next');
       const pressEscBtn = imageTextElement('press esc', 'pressesc', () => {
         if (typeof controls.lock === 'function') controls.lock();
       });
@@ -179,6 +182,7 @@ function storyboardHandler(iter) {
     };
 
     moveCamera(from, to, 1000, () => {
+      if (nextBtn) nextBtn.classList.remove('not-active');
       firstPerson();
     });
 
@@ -218,6 +222,7 @@ function storyboardHandler(iter) {
 
     setTimeout(() => {
       moveCamera(from, to, 3000, () => {
+        if (nextBtn) nextBtn.classList.remove('not-active');
         controls.target.copy(scene.position);
         if (typeof currentStory.cb === 'function') currentStory.cb();
       });
