@@ -36,7 +36,7 @@ jobs:
             docker_image.txt
             release_version.txt
       - name: Build and publish to registry
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v5
         env:
           APP_VERSION: ${{ env.RELEASE_VERSION }}
           RELEASE_DATE: $(date +\"%Y/%m/%d\")
